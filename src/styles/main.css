@@ -1,0 +1,19 @@
+/* filepath: src/styles/main.css */
+
+/* Browser defaults (margin, padding, button border, list-style, etc.) are
+ * already wiped by `@unocss/reset/tailwind.css` imported in main.ts.
+ * This file only adds the things the reset deliberately leaves alone. */
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

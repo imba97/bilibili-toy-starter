@@ -1,0 +1,62 @@
+{
+  "name": "bilibili-toy-starter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bilibili Toy starter — Vue 3 + UnoCSS + TypeScript, engineered with vite-plus",
+  "homepage": "https://github.com/imba97/bilibili-toy-starter#readme",
+  "bugs": {
+    "url": "https://github.com/imba97/bilibili-toy-starter/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imba97/bilibili-toy-starter.git"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vp build",
+    "preview": "vp preview",
+    "fmt": "vp fmt",
+    "lint": "vp lint",
+    "check": "vp check",
+    "test": "vp test",
+    "staged": "vp staged",
+    "pack:zip": "vp build && esno scripts/pack.ts",
+    "typecheck": "vue-tsc --noEmit",
+    "hooks:install": "vp config --hooks && vp hooks enable",
+    "hooks:status": "vp hooks status",
+    "release:dry": "bumpp --dry-run",
+    "toy:login": "toy login",
+    "toy:mylist": "toy mylist --json",
+    "toy:publish": "vp build && toy create ./dist --json",
+    "toy:update": "vp build && toy update",
+    "toy:stats": "toy stats",
+    "toy:history": "toy history",
+    "toy:bind": "toy video bind",
+    "toy:unbind": "toy video unbind"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@types/archiver": "^8.0.0",
+    "@types/node": "^22.20.3",
+    "@unocss/reset": "^66.10.5",
+    "@unocss/vite": "66",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "@vue/compiler-sfc": "^3.5.13",
+    "archiver": "^8.0.0",
+    "bumpp": "^11.0.1",
+    "esno": "^4.8.0",
+    "typescript": "^5.7.3",
+    "unocss": "66",
+    "vite": "^8.3.0",
+    "vite-plus": "^0.2.5",
+    "vitest": "^5.0.1",
+    "vue-tsc": "^2.2.0"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "packageManager": "pnpm@10.33.0"
+}
