@@ -24,5 +24,12 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts", "uno.config.ts", "scripts/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "typed-router.d.ts",
+    "vite.config.ts",
+    "uno.config.ts",
+    "scripts/**/*.ts"
+  ]
 }

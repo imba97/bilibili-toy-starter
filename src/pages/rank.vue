@@ -1,0 +1,158 @@
+<script setup lang="ts">
+// filepath: src/pages/rank.vue
+//
+// 排行榜页：getRankList 进页面拉一次 + 手动刷新；getMyRank 展示我的名次。
+// 不轮询（§7-3）——刷新只由用户手动触发。
+
+import { onMounted, ref } from 'vue'
+import { toy, toyReady, toErrorMessage, MOCK_ME_UNAME } from '@/lib/toy/client'
+import type { MyRank, RankEntry, UserProfile } from '@/lib/toy/types'
+
+const list = ref<RankEntry[]>([])
+const myRank = ref<MyRank | null>(null)
+const me = ref<UserProfile | null>(null)
+const loading = ref(true)
+const refreshing = ref(false)
+const errorMessage = ref('')
+
+async function load() {
+  errorMessage.value = ''
+  try {
+    await toyReady()
+    // 一次进页面各拉一次，本地复用（§7-3）
+    const [rankList, mine, profile] = await Promise.all([
+      toy.getRankList(),
+      toy.getMyRank(),
+      // 用户信息读取失败不阻塞榜单展示
+      toy.getUserProfile().catch(() => null)
+    ])
+    list.value = rankList
+    myRank.value = mine
+    me.value = profile
+  } catch (error) {
+    errorMessage.value = toErrorMessage(error)
+  }
+}
+
+async function refresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  await load()
+  refreshing.value = false
+}
+
+onMounted(async () => {
+  await load()
+  loading.value = false
+})
+
+const medalClass = (rank: number) =>
+  rank === 1
+    ? 'i-carbon:trophy-filled text-yellow-500'
+    : rank === 2
+      ? 'i-carbon:trophy-filled text-gray-400'
+      : rank === 3
+        ? 'i-carbon:trophy-filled text-amber-600'
+        : ''
+
+/**
+ * 高亮「我」：优先与 getUserProfile 的 toyOpenId 显式比较（线上）；
+ * mock 环境 profile 与榜单条目的 toyOpenId 同为 'mock-me'，天然命中；
+ * 拿不到 profile 时降级为 mock 专用 uname 匹配，线上无匹配即不高亮（宁缺勿滥）。
+ */
+const isMe = (entry: RankEntry): boolean => {
+  const myId = me.value?.toyOpenId
+  if (myId && entry.toyOpenId) return entry.toyOpenId === myId
+  return entry.uname === MOCK_ME_UNAME
+}
+</script>
+
+<template>
+  <section class="w-full max-w-sm flex flex-col gap-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-bold text-gray-700">签到排行榜</h2>
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-full text-sm bg-white border border-pink-200 text-gray-600 hover:text-pink-500 transition inline-flex items-center gap-1.5 disabled:opacity-50"
+        :disabled="refreshing || loading"
+        @click="refresh"
+      >
+        <span :class="refreshing ? 'i-svg-spinners:90-ring-with-bg' : 'i-carbon:renew'" />
+        刷新
+      </button>
+    </div>
+
+    <div
+      v-if="myRank && myRank.rank > 0"
+      class="px-4 py-3 rounded-xl bg-pink-500 text-white flex items-center justify-between shadow-sm"
+    >
+      <span class="flex items-center gap-2 min-w-0">
+        <img
+          v-if="me?.avatar"
+          :src="me.avatar"
+          :alt="me.nickname"
+          class="w-7 h-7 rounded-full shrink-0"
+          referrerpolicy="no-referrer"
+        />
+        <span class="text-sm truncate">{{ me?.nickname ?? '我' }}</span>
+      </span>
+      <span class="font-bold shrink-0">第 {{ myRank.rank }} 名 · {{ myRank.score }} 天</span>
+    </div>
+
+    <div class="rounded-2xl bg-white shadow-sm border border-pink-200 overflow-hidden">
+      <div v-if="loading" class="py-12 flex flex-col items-center gap-3">
+        <div class="i-svg-spinners:180-ring text-3xl text-pink-400" />
+        <p class="text-sm text-gray-400">加载榜单中…</p>
+      </div>
+
+      <div v-else-if="errorMessage" class="py-12 px-6 text-center">
+        <p class="text-sm text-red-500">{{ errorMessage }}</p>
+        <button
+          type="button"
+          class="mt-3 px-4 py-1.5 rounded-full text-sm bg-pink-500 text-white hover:bg-pink-600 transition"
+          @click="refresh"
+        >
+          重试
+        </button>
+      </div>
+
+      <ul v-else-if="list.length" class="divide-y divide-pink-50">
+        <li
+          v-for="entry in list"
+          :key="entry.toyOpenId ?? `${entry.rank}-${entry.uname}`"
+          class="px-4 py-3 flex items-center gap-3"
+          :class="isMe(entry) ? 'bg-pink-50' : ''"
+        >
+          <span class="w-7 text-center">
+            <span
+              v-if="medalClass(entry.rank)"
+              :class="medalClass(entry.rank)"
+              class="text-lg inline-block w-5 h-5"
+            />
+            <span v-else class="text-sm text-gray-400 tabular-nums">{{ entry.rank }}</span>
+          </span>
+          <img
+            v-if="entry.face"
+            :src="entry.face"
+            :alt="entry.uname"
+            class="w-6 h-6 rounded-full"
+            referrerpolicy="no-referrer"
+          />
+          <span class="flex-1 text-sm text-gray-700 truncate">
+            {{ isMe(entry) && me ? me.nickname : entry.uname }}
+            <span
+              v-if="isMe(entry)"
+              class="ml-1 px-1.5 py-0.5 text-xs rounded bg-pink-500 text-white font-medium"
+              >我</span
+            >
+          </span>
+          <span class="text-sm font-semibold text-pink-600 tabular-nums">{{ entry.score }} 天</span>
+        </li>
+      </ul>
+
+      <p v-else class="py-12 text-center text-sm text-gray-400">还没有人上榜，快回首页签到吧</p>
+    </div>
+
+    <p class="text-xs text-gray-400 text-center">榜单按累计签到天数排序，签到后自动更新</p>
+  </section>
+</template>

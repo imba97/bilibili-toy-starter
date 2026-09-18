@@ -14,6 +14,9 @@
 
 import { defineConfig } from 'vite-plus'
 import vue from '@vitejs/plugin-vue'
+// Vue Router 5 built-in file-based routing (src/pages/ → routes).
+// MUST be placed before vue() so <route> blocks in SFCs are picked up.
+import VueRouter from 'vue-router/vite'
 // UnoCSS 0.65.x's `vite` plugin is typed against older Vite versions; runtime
 // is fine on Vite 8. The cast keeps `vp check`'s type pass without forking types.
 import UnoCSS from 'unocss/vite'
@@ -21,7 +24,7 @@ import UnoCSS from 'unocss/vite'
 export default defineConfig({
   // --- Vite (base) ---
   base: './',
-  plugins: [vue(), UnoCSS() as any],
+  plugins: [VueRouter(), vue(), UnoCSS() as any],
 
   resolve: {
     alias: {

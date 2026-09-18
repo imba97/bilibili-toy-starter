@@ -1,0 +1,9 @@
+{
+  // vue-tsc / Volar 专属配置（npm run typecheck）。
+  // vueCompilerOptions 不是标准 TS 编译选项，放在根 tsconfig.json 会被
+  // oxlint 的 tsconfig 校验报错，所以拆到本文件。
+  "extends": "./tsconfig.json",
+  "vueCompilerOptions": {
+    "plugins": ["vue-router/volar/sfc-route-blocks", "vue-router/volar/sfc-typed-router"]
+  }
+}

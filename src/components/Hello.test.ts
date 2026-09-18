@@ -3,7 +3,7 @@
 // Smoke test for the starter. Edit / delete freely — this is here only to
 // prove `vp test` works out of the box.
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 describe('starter smoke test', () => {
   it('runs vitest', () => {
