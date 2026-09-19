@@ -1,4 +1,4 @@
-// filepath: src/lib/checkin.ts
+// filepath: src/composables/checkin.ts
 //
 // 每日签到领域逻辑（纯函数，可单测）。
 //

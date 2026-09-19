@@ -1,0 +1,83 @@
+// filepath: packages/bilibili-toy/src/error.ts
+//
+// Toy SDK 错误的统一识别与展示。
+//
+// 官方 d.ts 中错误呈现三种形态：
+//   1. `status: ToyDataStatus`     —— 数据类能力（用户/作者/视频互动）
+//   2. `code: number`              —— 旧版 http_error envelope
+//   3. `name: string`              —— 媒体能力（BusinessDenied 等）
+// 本文件只做"形态识别 + 文本归一化"，不判断"是否可重试"。
+// 重试判定在 `retry.ts` 里按 ToyDataStatus === 'unavailable' 二次过滤。
+
+export interface ToyErrorLike {
+  /** 错误分类标签（旧版 envelope 形态） */
+  type?: string
+  /** 错误代码（旧版 envelope 形态） */
+  code?: number
+  /** 数据类能力的整体状态（新版 d.ts 形态） */
+  status?: ToySDK.ToyDataStatus
+  /** 任意错误都可能被附带的可读文本 */
+  message?: string
+  /** 媒体类能力的标准错误名 */
+  name?: string
+}
+
+/** window.toy 不可用（不在 Toy 容器内、SSR、加载超时等）时抛出 */
+export class ToyNotAvailableError extends Error {
+  constructor() {
+    super('[bilibili-toy] window.toy 不可用 —— 请在 B 站 Toy 容器中运行')
+    this.name = 'ToyNotAvailableError'
+  }
+}
+
+/** 把任意错误归一化为带 [bilibili-toy] 前缀的 Error，方便定位。 */
+export function normalizeToyError(err: unknown): Error {
+  if (err instanceof ToyNotAvailableError) return err
+  if (err instanceof Error) {
+    if (err.message.startsWith('[bilibili-toy]')) return err
+    if (err.message.startsWith('[ToySDK]')) {
+      const wrapped = new Error(`[bilibili-toy] ${err.message}`)
+      wrapped.name = err.name
+      Object.assign(wrapped, err) // 保留 code / status / type 等附加字段
+      return wrapped
+    }
+    return err
+  }
+  return new Error(String(err))
+}
+
+/**
+ * 判定任意值是否"看起来像" Toy SDK 抛出的错误。
+ *
+ * 判定边界：以下任一命中即视为 Toy 错误（与 plan 决策 D 一致）：
+ *   - `status` 字段存在
+ *   - 同时有 `type` 与 `code`（旧版 envelope）
+ *   - `name` 字段存在且为字符串
+ *
+ * 业务侧可根据需要进一步在 `shouldRetry` 中按字段细化。
+ */
+export function isToyError(err: unknown): err is ToyErrorLike {
+  if (typeof err !== 'object' || err === null) return false
+  const e = err as Record<string, unknown>
+  if (typeof e.status === 'string') return true
+  if (typeof e.name === 'string' && e.name.length > 0) return true
+  if ('type' in e && typeof e.code === 'number') return true
+  return false
+}
+
+/** 把 Toy 错误归一化为可展示的字符串 */
+export function formatToyError(err: unknown): string {
+  if (isToyError(err)) {
+    if (err.message) return err.message
+    if (err.status) return `Toy 错误：${err.status}`
+    if (err.name) return `Toy 错误：${err.name}`
+    if (typeof err.code === 'number') return `Toy 错误（${err.code}）`
+  }
+  if (err instanceof Error) return err.message
+  return String(err)
+}
+
+/** 业务侧最常用的入口：toast / 错误提示直接调它 */
+export function toErrorMessage(err: unknown): string {
+  return formatToyError(err)
+}

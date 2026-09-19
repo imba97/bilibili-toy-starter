@@ -178,6 +178,9 @@ importers:
 
   .:
     dependencies:
+      bilibili-toy:
+        specifier: workspace:*
+        version: link:packages/bilibili-toy
       vue:
         specifier: ^3.5.43
         version: 3.5.43(typescript@7.0.2)
@@ -233,6 +236,18 @@ importers:
       vue-tsc:
         specifier: ^3.3.11
         version: 3.3.11(typescript@7.0.2)
+
+  packages/bilibili-toy:
+    devDependencies:
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite:
+        specifier: 'catalog:'
+        version: '@voidzero-dev/vite-plus-core@0.3.2(@types/node@22.20.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(typescript@7.0.2)(yaml@2.9.1)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.3.2(@types/node@22.20.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(typescript@7.0.2)(yaml@2.9.1)
 
 packages:
 

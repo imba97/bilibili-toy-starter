@@ -1,4 +1,4 @@
-// filepath: src/lib/checkin.test.ts
+// filepath: src/composables/checkin.test.ts
 
 import { describe, expect, it } from 'vite-plus/test'
 import {

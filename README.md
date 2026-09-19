@@ -4,21 +4,32 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](./LICENSE)
 
 > A Monorepo starter for the **Bilibili Toy** platform.
-> Scaffold a Toy app (Vue 3 + UnoCSS + TypeScript) and/or a publishable npm
-> library — engineering quality managed by [`vite-plus`](https://viteplus.dev/)
-> (the `vp` CLI, v0.2+).
+> Scaffold a Toy app (Vue 3 + UnoCSS + TypeScript) and the `bilibili-toy` SDK library.
+> Engineering quality managed by [`vite-plus`](https://viteplus.dev/) (the `vp` CLI, v0.2+).
 
 ```
 .
 ├── packages/
-│   ├── starter-toy/         # Vue 3 SPA — what gets uploaded as a Toy
-│   └── starter-lib/         # Publishable TS library — what gets uploaded to npm
+│   └── bilibili-toy/          # TypeScript SDK library — what gets published to npm
+├── src/                       # Vue 3 SPA — the Toy app itself
+│   ├── composables/           # Business logic (checkin domain + Toy utils)
+│   ├── pages/                 # Vue pages (index + rank)
+│   └── components/            # Vue components
 ├── scripts/
-│   └── publish-toy.mjs      # Two-stage Toy publish orchestrator (preview → confirm → submit)
-├── vite.config.ts           # All toolchain config in one file
+│   └── publish-toy.mjs        # Two-stage Toy publish orchestrator (preview → confirm → submit)
+├── vite.config.ts             # All toolchain config in one file
 ├── pnpm-workspace.yaml
-└── package.json             # Monorepo scripts
+└── package.json               # Monorepo scripts
 ```
+
+---
+
+## What is this?
+
+This repo is a **starter** for the Bilibili Toy platform. It contains two things:
+
+1. **A Toy app** (`src/`): A Vue 3 SPA built by `vp build` and uploaded to `toy create` / `toy update`.
+2. **An npm library** (`packages/bilibili-toy/`): A TypeScript SDK wrapper around the official Toy JS SDK, published to npm as `bilibili-toy`.
 
 ---
 
@@ -34,9 +45,38 @@ npm run dev
 
 # 3. Build & publish to the Toy platform
 npm run toy:publish
-# → builds packages/starter-toy/dist, runs `toy create`, prints preview_url.
+# → builds dist/, runs `toy create`, prints preview_url.
 #   Open the preview in your browser, then re-run with `--yes` to submit.
 ```
+
+---
+
+## The `bilibili-toy` SDK
+
+The SDK provides a thin, type-safe wrapper around the official Toy JS SDK:
+
+```ts
+import { toy, rank, cloud, user } from 'bilibili-toy'
+
+// 1. Handshake (wait for window.toy to load)
+await toy.ready()
+
+// 2. Call namespace methods directly
+await rank.submit({ score: 100 })
+const list = await rank.list()
+const me = await user.profile()
+await cloud.set({ key: 'value' })
+```
+
+### Key features
+
+- **Zero dependencies**: Pure TypeScript, no runtime deps
+- **Type-safe**: Full ToySDK type declarations with IDE autocomplete
+- **Flat API**: `import { rank, cloud } from bilibili-toy`, no nesting
+- **Proxy forwarding**: New SDK methods are automatically available
+- **Error normalization**: Unified `[bilibili-toy]` prefix for easy debugging
+
+See [`packages/bilibili-toy/README.md`](./packages/bilibili-toy/README.md) for the full API reference.
 
 ---
 
@@ -50,23 +90,17 @@ npm run toy:publish
 
 This runs:
 
-1. `vp build starter-toy` → `packages/starter-toy/dist/`
-2. `toy create ./packages/starter-toy/dist --json` (NO `--yes`)
+1. `vp build` → `dist/`
+2. `toy create ./dist --json` (NO `--yes`)
 
-You'll get back a `preview_url`. Open it. The page must render correctly under
+You get back a `preview_url`. Open it. The page must render correctly under
 `/toy/<slug>/` — assets are emitted with **relative** paths, so this is the
 real production runtime.
 
-Once you're happy:
+Once you are happy:
 
 ```bash
-toy create ./packages/starter-toy/dist --json --yes
-```
-
-…or use the helper script (which has friendlier output):
-
-```bash
-node scripts/publish-toy.mjs create
+toy create ./dist --json --yes
 ```
 
 ### B. Update an existing Toy
@@ -77,19 +111,13 @@ Slug is **locked** after first publish — never delete-and-recreate.
 npm run toy:update -- <toy-id>
 ```
 
-…or with the helper:
-
-```bash
-node scripts/publish-toy.mjs update <toy-id>
-```
-
 Same two-stage flow as create.
 
 ---
 
 ## Releasing the npm library
 
-`vp pack` outputs standard ESM + CJS + d.ts into `packages/starter-lib/dist/`.
+`vp pack` outputs standard ESM + d.ts into `packages/bilibili-toy/dist/`.
 This starter ships with [`bumpp`](https://github.com/antfu/bumpp) at the repo
 root to bump versions in one step (commit, tag, push).
 
@@ -101,20 +129,17 @@ npm run release:dry
 npm run release
 
 # 3. Publish to npm
-cd packages/starter-lib
+cd packages/bilibili-toy
 pnpm publish --access public
 ```
-
-If you prefer Changesets / release-it, swap in your release tool of choice —
-the `pack` output is plain Node-compatible artifacts.
 
 ---
 
 ## Engineering
 
-All toolchain settings live in **[`vite.config.ts`](./vite.config.ts)**. There's
-no separate `.eslintrc`, `.prettierrc`, `tsdown.config.ts`, etc. `vp` reads the
-following blocks from that single file:
+All toolchain settings live in **[`vite.config.ts`](./vite.config.ts)**.
+There is no separate `.eslintrc`, `.prettierrc`, `tsdown.config.ts`, etc.
+`vp` reads the following blocks from that single file:
 
 | Block    | Drives                                      |
 | -------- | ------------------------------------------- |
@@ -127,41 +152,41 @@ following blocks from that single file:
 
 ### Commands cheat-sheet
 
-| Command                           | What it does                                     |
-| --------------------------------- | ------------------------------------------------ |
-| `npm run dev`                     | Toy dev server (`vp dev starter-toy`)            |
-| `npm run build`                   | Toy production build                             |
-| `npm run preview`                 | Toy preview of the built `dist/`                 |
-| `npm run pack`                    | Library build (tsdown via `vp pack starter-lib`) |
-| `npm run test`                    | Vitest across packages                           |
-| `npm run typecheck`               | `tsc --noEmit` for both packages                 |
-| `npm run check`                   | Format + lint + type-check                       |
-| `npm run fmt` / `lint` / `staged` | Individual checks                                |
-| `npm run hooks:install`           | Enable git pre-commit hooks (one-time)           |
-| `npm run release` / `release:dry` | Bump version + commit + tag + push               |
+| Command                           | What it does                           |
+| --------------------------------- | -------------------------------------- |
+| `npm run dev`                     | Toy dev server (`vp dev`)              |
+| `npm run build`                   | Toy production build                   |
+| `npm run preview`                 | Toy preview of the built `dist/`       |
+| `npm run pack`                    | Library build (tsdown via `vp pack`)   |
+| `npm run test`                    | Vitest across packages                 |
+| `npm run typecheck`               | `tsc --noEmit` for both packages       |
+| `npm run check`                   | Format + lint + type-check             |
+| `npm run fmt` / `lint` / `staged` | Individual checks                      |
+| `npm run hooks:install`           | Enable git pre-commit hooks (one-time) |
+| `npm run release` / `release:dry` | Bump version + commit + tag + push     |
 
 ---
 
 ## Editing rules
 
-- **Toy content**: edit `packages/starter-toy/src/App.vue` and friends.
-- **Library content**: edit `packages/starter-lib/src/core/index.ts`.
-- **Don't** add `eslint`, `prettier`, or `tsdown.config.ts`. `vp` covers all of these.
-- **Don't** create `toy.yaml`. Publishing state lives in the official `toy` CLI history.
-- **Don't** change `base: './'` in `packages/starter-toy/vite.config.ts`. Toy pages
-  are served under `/toy/<slug>/` and require relative asset URLs.
+- **Toy content**: edit `src/pages/` and `src/components/`.
+- **Business logic**: edit `src/composables/` (checkin domain, Toy utils).
+- **SDK library**: edit `packages/bilibili-toy/src/`.
+- **Do not** add `eslint`, `prettier`, or `tsdown.config.ts`. `vp` covers all of these.
+- **Do not** create `toy.yaml`. Publishing state lives in the official `toy` CLI history.
+- **Do not** change `base: ./` in `vite.config.ts`. Toy pages are served under `/toy/<slug>/` and require relative asset URLs.
 
 ---
 
 ## Common pitfalls
 
 - **White screen after publish** — usually absolute paths in `index.html` or
-  assets. Verify `packages/starter-toy/dist/index.html` uses
-  `<script src="./assets/...">` and `link href="./assets/...">`. Run
-  `npm run build` and grep for any `/assets/` (absolute) references.
-- **404 on assets** — same root cause as above. The `base: './'` setting is what
-  makes the build emit relative URLs; don't override it.
-- **Slug locked** — the first publish sets your Toy's URL slug forever. To
+  assets. Verify `dist/index.html` uses `<script src="./assets/...">` and
+  `link href="./assets/...">`. Run `npm run build` and grep for any
+  `/assets/` (absolute) references.
+- **404 on assets** — same root cause as above. The `base: ./` setting is what
+  makes the build emit relative URLs; do not override it.
+- **Slug locked** — the first publish sets your Toy URL slug forever. To
   rename a Toy, you must create a new one (and accept a new URL).
 - **`vp` not found** — install it globally: `irm https://vite.plus/ps1 | iex`
   (Windows) or `curl -fsSL https://vite.plus | bash` (macOS/Linux).

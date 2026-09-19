@@ -5,12 +5,12 @@
 // 不轮询（§7-3）——刷新只由用户手动触发。
 
 import { onMounted, ref } from 'vue'
-import { toy, toyReady, toErrorMessage, MOCK_ME_UNAME } from '@/lib/toy/client'
-import type { MyRank, RankEntry, UserProfile } from '@/lib/toy/types'
+import { rank, user, type ToySDK } from 'bilibili-toy'
+import { initToy, toErrorMessage } from '@/composables/useToy'
 
-const list = ref<RankEntry[]>([])
-const myRank = ref<MyRank | null>(null)
-const me = ref<UserProfile | null>(null)
+const list = ref<ToySDK.RankItem[]>([])
+const myRank = ref<ToySDK.MyRankResp | null>(null)
+const me = ref<ToySDK.UserProfileResp | null>(null)
 const loading = ref(true)
 const refreshing = ref(false)
 const errorMessage = ref('')
@@ -18,13 +18,13 @@ const errorMessage = ref('')
 async function load() {
   errorMessage.value = ''
   try {
-    await toyReady()
+    await initToy()
     // 一次进页面各拉一次，本地复用（§7-3）
     const [rankList, mine, profile] = await Promise.all([
-      toy.getRankList(),
-      toy.getMyRank(),
+      rank.list(),
+      rank.me(),
       // 用户信息读取失败不阻塞榜单展示
-      toy.getUserProfile().catch(() => null)
+      user.profile().catch(() => null)
     ])
     list.value = rankList
     myRank.value = mine
@@ -56,14 +56,13 @@ const medalClass = (rank: number) =>
         : ''
 
 /**
- * 高亮「我」：优先与 getUserProfile 的 toyOpenId 显式比较（线上）；
- * mock 环境 profile 与榜单条目的 toyOpenId 同为 'mock-me'，天然命中；
- * 拿不到 profile 时降级为 mock 专用 uname 匹配，线上无匹配即不高亮（宁缺勿滥）。
+ * 高亮「我」：通过 getUserProfile 的 toyOpenId 与榜单条目对比；
+ * 拿不到 profile 时不高亮（宁缺勿滥）。
  */
 const isMe = (entry: RankEntry): boolean => {
   const myId = me.value?.toyOpenId
-  if (myId && entry.toyOpenId) return entry.toyOpenId === myId
-  return entry.uname === MOCK_ME_UNAME
+  if (!myId || !entry.toyOpenId) return false
+  return entry.toyOpenId === myId
 }
 </script>
 
@@ -83,7 +82,7 @@ const isMe = (entry: RankEntry): boolean => {
     </div>
 
     <div
-      v-if="myRank && myRank.rank > 0"
+      v-if="myRank && myRank.ranked"
       class="px-4 py-3 rounded-xl bg-pink-500 text-white flex items-center justify-between shadow-sm"
     >
       <span class="flex items-center gap-2 min-w-0">
@@ -119,7 +118,7 @@ const isMe = (entry: RankEntry): boolean => {
       <ul v-else-if="list.length" class="divide-y divide-pink-50">
         <li
           v-for="entry in list"
-          :key="entry.toyOpenId ?? `${entry.rank}-${entry.uname}`"
+          :key="entry.toyOpenId ?? `${entry.rank}-${entry.nickname}`"
           class="px-4 py-3 flex items-center gap-3"
           :class="isMe(entry) ? 'bg-pink-50' : ''"
         >
@@ -132,14 +131,14 @@ const isMe = (entry: RankEntry): boolean => {
             <span v-else class="text-sm text-gray-400 tabular-nums">{{ entry.rank }}</span>
           </span>
           <img
-            v-if="entry.face"
-            :src="entry.face"
-            :alt="entry.uname"
+            v-if="entry.avatar"
+            :src="entry.avatar"
+            :alt="entry.nickname"
             class="w-6 h-6 rounded-full"
             referrerpolicy="no-referrer"
           />
           <span class="flex-1 text-sm text-gray-700 truncate">
-            {{ isMe(entry) && me ? me.nickname : entry.uname }}
+            {{ isMe(entry) && me ? me.nickname : entry.nickname }}
             <span
               v-if="isMe(entry)"
               class="ml-1 px-1.5 py-0.5 text-xs rounded bg-pink-500 text-white font-medium"

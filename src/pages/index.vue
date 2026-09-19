@@ -6,7 +6,8 @@
 // 签到成功一次 setCloudStorage 批量写 + submitScore（§7-4 按事件提交）。
 
 import { onMounted, ref } from 'vue'
-import { toy, toyReady, isMockEnvRef, toErrorMessage } from '@/lib/toy/client'
+import { rank, cloud, user, type ToySDK } from 'bilibili-toy'
+import { initToy, toErrorMessage, isToyAvailable } from '@/composables/useToy'
 import {
   STORAGE_KEYS,
   formatDate,
@@ -14,11 +15,10 @@ import {
   parseCheckinState,
   performCheckin,
   type CheckinState
-} from '@/lib/checkin'
-import type { UserProfile } from '@/lib/toy/types'
+} from '@/composables/checkin'
 
 const state = ref<CheckinState>({ total: 0, lastDate: null })
-const user = ref<UserProfile | null>(null)
+const userProfile = ref<ToySDK.UserProfileResp | null>(null)
 const loading = ref(true)
 const submitting = ref(false)
 const message = ref('')
@@ -37,7 +37,7 @@ function notify(text: string, isError = false) {
 async function syncScore(score: number): Promise<void> {
   if (scoreSynced || score <= 0) return
   try {
-    await toy.submitScore({ score })
+    await rank.submit({ score })
     scoreSynced = true
   } catch {
     // 忽略：榜单分数落后会在下次 onMounted 时由 ensureScoreSynced 补交
@@ -46,15 +46,15 @@ async function syncScore(score: number): Promise<void> {
 
 onMounted(async () => {
   try {
-    await toyReady()
+    await initToy()
     const [raw, profile, mine] = await Promise.all([
-      toy.getCloudStorage([STORAGE_KEYS.total, STORAGE_KEYS.lastDate]),
+      cloud.get([STORAGE_KEYS.total, STORAGE_KEYS.lastDate]),
       // 用户信息 / 我的排名读取失败不阻塞签到主流程
-      toy.getUserProfile().catch(() => null),
-      toy.getMyRank().catch(() => null)
+      user.profile().catch(() => null),
+      rank.me().catch(() => null)
     ])
     state.value = parseCheckinState(raw)
-    user.value = profile
+    userProfile.value = profile
     // 补交：上次 submitScore 失败会导致榜单分数落后，进页面时对齐一次（§7-4 仍是按事件提交）
     if (mine && state.value.total > mine.score) {
       await syncScore(state.value.total)
@@ -75,7 +75,7 @@ async function checkin() {
   try {
     const result = performCheckin(state.value, today())
     // 一次批量写（§7-2）
-    await toy.setCloudStorage(result.writes)
+    await cloud.set(result.writes)
     state.value = result.state
     // 排行榜分数 = 累计签到天数，只在签到事件提交一次（§7-4）；失败下次进页面补交
     const scoreBefore = scoreSynced
