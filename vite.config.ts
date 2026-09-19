@@ -13,6 +13,7 @@
 //   - No `historyApiFallback`-style rewrites — Toy pages are static SPAs.
 
 import { defineConfig } from 'vite-plus'
+import { buildInfoPlugin } from './scripts/vite-plugins/build-info'
 import vue from '@vitejs/plugin-vue'
 // Vue Router 5 built-in file-based routing (src/pages/ → routes).
 // MUST be placed before vue() so <route> blocks in SFCs are picked up.
@@ -24,7 +25,7 @@ import UnoCSS from 'unocss/vite'
 export default defineConfig({
   // --- Vite (base) ---
   base: './',
-  plugins: [VueRouter(), vue(), UnoCSS() as any],
+  plugins: [buildInfoPlugin(), VueRouter(), vue(), UnoCSS() as any],
 
   resolve: {
     alias: {

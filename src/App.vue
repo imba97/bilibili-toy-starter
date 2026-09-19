@@ -9,14 +9,23 @@
 //   - `base: './'` in vite.config.ts (Toy platform requires relative URLs)
 //   - hash history in main.ts (history mode 404s under /toy/<slug>/)
 
-// Centralized repo metadata. Override at build time with
-//   VITE_REPO_URL=https://github.com/you/your-toy vp build
-const REPO_URL = import.meta.env.VITE_REPO_URL ?? 'https://github.com/imba97/bilibili-toy-starter'
+// Repo URL is hardcoded — change here if you fork. Used for both the GitHub
+// icon link and the footer commit link.
+const REPO_URL = 'https://github.com/imba97/bilibili-toy-starter'
 
 const navItems = [
   { to: '/', label: '签到', icon: 'i-carbon:checkbox-checked-filled' },
   { to: '/rank', label: '排行榜', icon: 'i-carbon:trophy' }
 ]
+
+// Build-time constants injected by `buildInfoPlugin` (see vite.config.ts).
+// On a real git checkout both are non-empty; on shallow / non-git builds
+// `__BUILD_COMMIT__` is '' and we hide the footer block entirely.
+const commitFull = __BUILD_COMMIT__
+const commitShort = commitFull.slice(0, 7).toUpperCase()
+const appVersion = __APP_VERSION__
+const commitHref = commitFull ? `${REPO_URL}/commit/${commitFull}` : REPO_URL
+const showFooter = commitFull !== ''
 </script>
 
 <template>
@@ -73,5 +82,22 @@ const navItems = [
     <main class="flex-1 flex flex-col items-center p-6">
       <RouterView />
     </main>
+
+    <footer v-if="showFooter" class="px-6 pb-4 pt-2 text-xs text-gray-400">
+      <hr class="border-t border-pink-100 mb-3" />
+      <div class="flex items-center justify-center gap-2 flex-wrap">
+        <a
+          :href="commitHref"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:text-pink-500 transition"
+          :title="`View commit ${commitFull} on GitHub`"
+        >
+          Commit <span class="font-mono">{{ commitShort }}</span>
+        </a>
+        <span aria-hidden="true">·</span>
+        <span>v{{ appVersion }}</span>
+      </div>
+    </footer>
   </div>
 </template>
