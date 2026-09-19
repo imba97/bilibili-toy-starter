@@ -22,17 +22,28 @@ const isPromiseLike = (v: unknown): v is PromiseLike<unknown> =>
  * 通用 namespace 工厂。
  *
  * @param bindings namespace 内部方法名 → ToySDK.Toy 的方法名映射
+ *            必须 `as const`，让 TS 把值识别为字面量类型。
  *
  * 调用 `rank.submit({ score })` 时：
  *   1. Proxy 拦截 `submit` 访问
  *   2. 通过 bindings 找到 ToySDK 方法名 `submitScore`
  *   3. 调用 `getSdk().submitScore(...)`
  *   4. Promise reject 时统一过 normalizeToyError
+ *
+ * 类型：bindings 每个值的字面量类型（SDK 方法名）会映射到
+ * `ToySDK.Toy` 上对应方法的签名。返回类型的形状是：
+ *   { [K in keyof Bindings]: ToySDK.Toy[Bindings[K]] }
+ * 例如 `{ submit: 'submitScore' }` 让 `submit` 自动具备
+ * `(req: SubmitScoreReq) => Promise<SubmitScoreResp>` 的签名。
  */
-export function createNamespace<T extends object>(bindings: Record<keyof T, keyof ToySDK.Toy>): T {
-  return new Proxy({} as T, {
+export function createNamespace<B extends Record<string, keyof ToySDK.Toy>>(
+  bindings: B
+): {
+  [K in keyof B]: ToySDK.Toy[B[K]]
+} {
+  return new Proxy({} as { [K in keyof B]: ToySDK.Toy[B[K]] }, {
     get(_target, prop: string) {
-      const sdkMethod = bindings[prop as keyof T]
+      const sdkMethod = bindings[prop as keyof B]
       if (!sdkMethod) {
         throw new Error(`[bilibili-toy] unknown namespace method: ${String(prop)}`)
       }

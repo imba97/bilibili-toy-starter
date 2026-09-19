@@ -38,7 +38,14 @@ export function normalizeToyError(err: unknown): Error {
     if (err.message.startsWith('[ToySDK]')) {
       const wrapped = new Error(`[bilibili-toy] ${err.message}`)
       wrapped.name = err.name
-      Object.assign(wrapped, err) // 保留 code / status / type 等附加字段
+      // 显式拷贝 Toy SDK 错误的附加字段，避免 Object.assign 触发 getter
+      // 副作用以及丢失不可枚举属性。
+      for (const key of ['type', 'code', 'status'] as const) {
+        const value = (err as unknown as Record<string, unknown>)[key]
+        if (value !== undefined) {
+          ;(wrapped as unknown as Record<string, unknown>)[key] = value
+        }
+      }
       return wrapped
     }
     return err

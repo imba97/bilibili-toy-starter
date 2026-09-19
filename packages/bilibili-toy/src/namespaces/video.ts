@@ -4,10 +4,7 @@
 
 import { createNamespace } from '../namespace'
 
-export interface VideoNamespace {
-  actions: (req: ToySDK.VideoUserActionsReq) => Promise<ToySDK.VideoUserActionsResp>
-}
-
-export const video = createNamespace<VideoNamespace>({
+/** 视频能力 —— 透传官方 getVideoUserActions。方法签名由 ToySDK.Toy 自动推导。 */
+export const video = createNamespace({
   actions: 'getVideoUserActions'
 } as const)

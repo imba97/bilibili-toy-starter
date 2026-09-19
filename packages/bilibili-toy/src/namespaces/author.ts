@@ -4,13 +4,8 @@
 
 import { createNamespace } from '../namespace'
 
-export interface AuthorNamespace {
-  profile: () => Promise<ToySDK.AuthorProfileResp>
-  videos: (req: ToySDK.AuthorVideosReq) => Promise<ToySDK.AuthorVideosResp>
-  relation: () => Promise<ToySDK.AuthorRelationResp>
-}
-
-export const author = createNamespace<AuthorNamespace>({
+/** 作者能力 —— 透传官方 getAuthorProfile / getAuthorVideos / getAuthorRelation。方法签名由 ToySDK.Toy 自动推导。 */
+export const author = createNamespace({
   profile: 'getAuthorProfile',
   videos: 'getAuthorVideos',
   relation: 'getAuthorRelation'

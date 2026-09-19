@@ -47,11 +47,9 @@ function normalizeRankEntry(entry: RawRankEntry): ToySDK.RankItem {
   }
 }
 
-const rawRank = createNamespace<{
-  submit: (req: ToySDK.SubmitScoreReq) => Promise<ToySDK.SubmitScoreResp>
-  list: (req?: ToySDK.RankListReq) => Promise<RawRankListResp | ToySDK.RankItem[]>
-  me: (req?: ToySDK.MyRankReq) => Promise<ToySDK.MyRankResp>
-}>({
+// 通过 as const 让 createNamespace 自动从 ToySDK.Toy 推导方法签名。
+// list 的真实线上返回结构与 d.ts 不一致，在二次归一化处做类型断言。
+const rawRank = createNamespace({
   submit: 'submitScore',
   list: 'getRankList',
   me: 'getMyRank'
@@ -61,16 +59,12 @@ export const rank: RankNamespace = {
   submit: (req) => rawRank.submit(req),
 
   list: async (req) => {
-    const resp = await rawRank.list(req)
+    const resp = (await rawRank.list(req)) as RawRankListResp | ToySDK.RankItem[]
 
     // 线上实测结构：{ code, data: { list: [...] } }，条目是 { rank, score, user_info }
+    // 若某天 SDK 修好按 d.ts 直接返回扁平数组，归一化结果会退化为空 —— 这种情况请同步更新此处。
     if (!Array.isArray(resp) && Array.isArray(resp?.data?.list)) {
       return resp.data.list.map(normalizeRankEntry)
-    }
-
-    // 防御：若某天 SDK 修好了，按 d.ts 直接返回扁平数组，原样透传
-    if (Array.isArray(resp)) {
-      return resp
     }
 
     return []

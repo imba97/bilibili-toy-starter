@@ -14,7 +14,7 @@ let cachedSdk: ToySDK.Toy | null = null
 let readyPromise: Promise<ToySDK.Toy> | null = null
 
 /** 等 window.toy 出现并缓存。超时抛 ToyNotAvailableError。 */
-function waitForToy(timeoutMs: number): Promise<ToySDK.Toy> {
+function waitForToy(timeoutMs: number, onTimeout: () => void): Promise<ToySDK.Toy> {
   return new Promise((resolve, reject) => {
     const start = Date.now()
     const tick = () => {
@@ -25,6 +25,7 @@ function waitForToy(timeoutMs: number): Promise<ToySDK.Toy> {
         return
       }
       if (Date.now() - start > timeoutMs) {
+        onTimeout()
         reject(new ToyNotAvailableError())
         return
       }
@@ -52,10 +53,20 @@ export const toy = {
   /**
    * 等待 window.toy 出现并缓存。多次调用共用同一个 Promise。
    * 超时抛 ToyNotAvailableError。默认超时 5000ms。
+   *
+   * 超时后会清空内部缓存 —— 下一次调用 ready() 会重新探测，
+   * 避免拿到永远 reject 的同一个 Promise。
    */
   ready: (timeoutMs = 5000): Promise<ToySDK.Toy> => {
     if (cachedSdk) return Promise.resolve(cachedSdk)
-    readyPromise ??= waitForToy(timeoutMs)
+    readyPromise ??= waitForToy(timeoutMs, () => {
+      // 超时清空缓存，让后续 ready() 重新探测。
+      readyPromise = null
+      cachedSdk = null
+    }).catch((err) => {
+      readyPromise = null
+      throw err
+    })
     return readyPromise
   },
 
