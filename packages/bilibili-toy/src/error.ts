@@ -65,6 +65,27 @@ export function isToyError(err: unknown): err is ToyErrorLike {
   return false
 }
 
+/**
+ * 判定 Toy 错误是否属于"用户拒绝 / 拿不到资料"这一类。
+ *
+ * 覆盖三种来源：
+ *   - 数据类能力的 `ToyDataStatus === 'denied'` —— 用户在数据确认弹窗拒绝
+ *   - `unauthorized` / `unsupported` / `toy_context_unavailable` —— 同样无法拿到资料
+ *   - 媒体类能力的 `error.name === 'BusinessDenied' | 'NotAllowedError'` —— 摄像头/麦克风被拒
+ *
+ * 业务侧典型用法：用户拒绝授权信息后，在签到按钮旁渲染一个"重新授权用户信息"按钮，
+ * 点击时再次调用 `user.profile()` 由平台弹窗。
+ */
+export function isDeniedError(err: unknown): boolean {
+  if (!isToyError(err)) return false
+  if (err.status === 'denied') return true
+  if (err.status === 'unauthorized') return true
+  if (err.status === 'unsupported') return true
+  if (err.status === 'toy_context_unavailable') return true
+  if (err.name === 'BusinessDenied' || err.name === 'NotAllowedError') return true
+  return false
+}
+
 /** 把 Toy 错误归一化为可展示的字符串 */
 export function formatToyError(err: unknown): string {
   if (isToyError(err)) {

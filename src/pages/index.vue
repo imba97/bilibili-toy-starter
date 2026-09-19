@@ -6,7 +6,7 @@
 // 签到成功一次 setCloudStorage 批量写 + submitScore（§7-4 按事件提交）。
 
 import { onMounted, ref } from 'vue'
-import { rank, cloud, user } from 'bilibili-toy'
+import { rank, cloud, user, isDeniedError, isToyError } from 'bilibili-toy'
 import { initToy, toErrorMessage } from '@/composables/useToy'
 import {
   STORAGE_KEYS,
@@ -21,8 +21,11 @@ const state = ref<CheckinState>({ total: 0, lastDate: null })
 const userProfile = ref<ToySDK.UserProfileResp | null>(null)
 const loading = ref(true)
 const submitting = ref(false)
+const authorising = ref(false)
 const message = ref('')
 const messageIsError = ref(false)
+/** 用户拒绝授权信息（数据确认弹窗选了"拒绝"）。点击"授权用户信息"按钮可重新触发弹窗。 */
+const userDenied = ref(false)
 // 防重复提交：本 session 内已把分数同步到榜单就不再 submitScore（幂等但也耗额度）
 let scoreSynced = false
 
@@ -31,6 +34,22 @@ const today = () => formatDate(new Date())
 function notify(text: string, isError = false) {
   message.value = text
   messageIsError.value = isError
+}
+
+/**
+ * 主动拉一次用户资料：进页面时、以及用户点了"授权用户信息"按钮时都会走这里。
+ * 不抛错：拒绝/失败都把状态落到 userDenied / userProfile，让模板自己分支渲染。
+ */
+async function fetchProfile() {
+  try {
+    const profile = await user.profile()
+    userProfile.value = profile
+    userDenied.value = false
+  } catch (err) {
+    userProfile.value = null
+    userDenied.value = isToyError(err) && isDeniedError(err)
+    // 非拒绝类的失败（如网络/服务不可用）只在首次进页面提示一次，避免按钮反复 toast
+  }
 }
 
 /** 把累计天数同步到排行榜；失败静默（不阻塞签到主流程，下次进页面会再补） */
@@ -47,14 +66,14 @@ async function syncScore(score: number): Promise<void> {
 onMounted(async () => {
   try {
     await initToy()
-    const [raw, profile, mine] = await Promise.all([
+    const [raw, mine] = await Promise.all([
       cloud.get([STORAGE_KEYS.total, STORAGE_KEYS.lastDate]),
-      // 用户信息 / 我的排名读取失败不阻塞签到主流程
-      user.profile().catch(() => null),
-      rank.me().catch(() => null)
+      // 我的排名读取失败不阻塞签到主流程
+      rank.me().catch(() => null),
+      // 用户信息由 fetchProfile 处理拒绝/失败的状态分流
+      fetchProfile()
     ])
     state.value = parseCheckinState(raw)
-    userProfile.value = profile
     // 补交：上次 submitScore 失败会导致榜单分数落后，进页面时对齐一次（§7-4 仍是按事件提交）
     if (mine && state.value.total > mine.score) {
       await syncScore(state.value.total)
@@ -67,6 +86,20 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+/** 用户点了"授权用户信息"按钮：再拉一次 profile，由平台弹窗 */
+async function authoriseUser() {
+  if (authorising.value) return
+  authorising.value = true
+  notify('')
+  try {
+    await fetchProfile()
+    if (userProfile.value) notify('已获取用户信息')
+    else if (!userDenied.value) notify('获取用户信息失败，请稍后再试', true)
+  } finally {
+    authorising.value = false
+  }
+}
 
 async function checkin() {
   if (submitting.value || isCheckedInToday(state.value, today())) return
@@ -115,6 +148,18 @@ async function checkin() {
           <span v-else class="i-carbon:user-avatar-filled text-2xl text-gray-300" />
           <span class="text-sm text-gray-600 font-medium">{{ userProfile.nickname }}</span>
         </div>
+
+        <button
+          v-else-if="userDenied"
+          type="button"
+          class="w-full py-2 rounded-xl text-sm font-medium border border-pink-300 text-pink-600 hover:bg-pink-50 active:bg-pink-100 transition inline-flex items-center justify-center gap-2"
+          :disabled="authorising"
+          @click="authoriseUser"
+        >
+          <span v-if="authorising" class="i-svg-spinners:90-ring-with-bg" />
+          <span v-else class="i-carbon:user-multiple" />
+          <span>{{ authorising ? '正在请求授权…' : '授权用户信息' }}</span>
+        </button>
 
         <div class="text-center">
           <div class="text-5xl font-bold text-pink-600 tabular-nums">{{ state.total }}</div>

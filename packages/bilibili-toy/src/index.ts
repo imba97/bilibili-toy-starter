@@ -34,6 +34,7 @@ export { withRetry, isRetryableError } from './retry'
 export type { ToyErrorLike } from './error'
 export {
   isToyError,
+  isDeniedError,
   formatToyError,
   toErrorMessage,
   normalizeToyError,
