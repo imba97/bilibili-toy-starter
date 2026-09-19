@@ -3,6 +3,10 @@
 //
 // 排行榜页：getRankList 进页面拉一次 + 手动刷新；getMyRank 展示我的名次。
 // 不轮询（§7-3）——刷新只由用户手动触发。
+//
+// 「我的排名」高亮：d.ts 声明 RankItem 没有 toyOpenId（榜单不含用户标识），
+// 所以没法精确匹配「我」。近似方案：拿 getMyRank 的 rank 高亮对应名次；
+// 同分名次唯一，rank 本身就是稳定标识。拿不到 myRank 时不高亮（宁缺勿滥）。
 
 import { onMounted, ref } from 'vue'
 import { rank, user, type ToySDK } from 'bilibili-toy'
@@ -56,14 +60,11 @@ const medalClass = (rank: number) =>
         : ''
 
 /**
- * 高亮「我」：通过 getUserProfile 的 toyOpenId 与榜单条目对比；
- * 拿不到 profile 时不高亮（宁缺勿滥）。
+ * 高亮「我」：榜单条目不含 toyOpenId（d.ts 明确不给），
+ * 用 getMyRank 的 rank 精确对应条目。rank 在榜单内唯一，不并列。
  */
-const isMe = (entry: RankEntry): boolean => {
-  const myId = me.value?.toyOpenId
-  if (!myId || !entry.toyOpenId) return false
-  return entry.toyOpenId === myId
-}
+const isMe = (entry: ToySDK.RankItem): boolean =>
+  myRank.value !== null && myRank.value.ranked && entry.rank === myRank.value.rank
 </script>
 
 <template>
@@ -118,7 +119,7 @@ const isMe = (entry: RankEntry): boolean => {
       <ul v-else-if="list.length" class="divide-y divide-pink-50">
         <li
           v-for="entry in list"
-          :key="entry.toyOpenId ?? `${entry.rank}-${entry.nickname}`"
+          :key="entry.rank"
           class="px-4 py-3 flex items-center gap-3"
           :class="isMe(entry) ? 'bg-pink-50' : ''"
         >
