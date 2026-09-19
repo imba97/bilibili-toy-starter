@@ -33,52 +33,45 @@
 
       <div class="flex flex-col gap-2">
         <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
-          <span class="i-carbon:technology text-pink-500 text-base" />
-          技术栈
+          <span class="i-carbon:flash text-pink-500 text-base" />
+          特性
         </h3>
 
         <ul class="flex flex-col gap-1.5 text-sm text-gray-600">
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
             <span
-              ><span class="font-medium text-gray-700">Vue 3</span> · 组合式 API + 文件式路由</span
+              ><span class="font-medium text-gray-700">Mock override</span> · dev 零 RPC</span
             >
           </li>
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
             <span
-              ><span class="font-medium text-gray-700">UnoCSS</span> · 按需生成的原子化 CSS
-              引擎</span
+              ><span class="font-medium text-gray-700">Host-ready retry</span> · 自动退避</span
             >
           </li>
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
             <span
-              ><span class="font-medium text-gray-700">TypeScript</span> ·
-              严格模式，端到端类型安全</span
+              ><span class="font-medium text-gray-700">错误归一化</span> · 统一前缀与类型守卫</span
             >
           </li>
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
             <span
-              ><span class="font-medium text-gray-700">vite-plus</span>（<code
-                class="px-1 py-0.5 rounded bg-pink-50 text-pink-600 text-xs font-mono"
-                >vp</code
-              >）· 构建 / 格式化 / 检查一站式 CLI</span
+              ><span class="font-medium text-gray-700">两段式发布</span> · 预览确认再提交</span
             >
           </li>
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
             <span
-              ><span class="font-medium text-gray-700">bilibili-toy</span> · 自带 Toy SDK
-              封装，扁平化导出 9 个 namespace</span
+              ><span class="font-medium text-gray-700">vite-plus</span> · 一站式 CLI</span
             >
           </li>
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
             <span
-              ><span class="font-medium text-gray-700">pnpm workspace</span> · monorepo
-              依赖管理</span
+              ><span class="font-medium text-gray-700">Toy 容器兼容</span> · 相对路径 + hash</span
             >
           </li>
         </ul>
@@ -90,47 +83,58 @@
     >
       <h3 class="text-base font-bold text-gray-700 flex items-center gap-2">
         <span class="i-carbon:compare text-pink-500 text-lg" />
-        相比传统项目启动的优势
+        相比直接调 window.toy
       </h3>
 
       <div class="rounded-xl border border-pink-100 overflow-hidden text-xs">
         <div class="grid grid-cols-2 bg-pink-50 text-gray-700 font-semibold">
-          <div class="px-3 py-2 border-r border-pink-100">传统启动 Toy</div>
+          <div class="px-3 py-2 border-r border-pink-100">直接调 window.toy</div>
           <div class="px-3 py-2">本 starter</div>
         </div>
 
         <div class="grid grid-cols-2 border-t border-pink-100">
-          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">
-            <code class="font-mono text-pink-600">window.toy.xxx</code> 散落调用
-          </div>
-          <div class="px-3 py-2 text-gray-700">
-            <code class="font-mono text-pink-600">bilibili-toy</code> 集中封装
-          </div>
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">dev 模式无 mock 调试</div>
+          <div class="px-3 py-2 text-gray-700">Mock override，本地跑通全部业务</div>
         </div>
 
         <div class="grid grid-cols-2 border-t border-pink-100 bg-gray-50/40">
-          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">深嵌套、类型需自处理</div>
-          <div class="px-3 py-2 text-gray-700">扁平 namespace + 完整类型</div>
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">host 注入失败需手写重试</div>
+          <div class="px-3 py-2 text-gray-700">Host-ready retry 自动退避</div>
         </div>
 
         <div class="grid grid-cols-2 border-t border-pink-100">
-          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">SDK 升级要手改</div>
-          <div class="px-3 py-2 text-gray-700">Proxy 转发，零成本跟随</div>
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">手判 status / code / name</div>
+          <div class="px-3 py-2 text-gray-700">isToyError / isDeniedError 一行判</div>
         </div>
 
         <div class="grid grid-cols-2 border-t border-pink-100 bg-gray-50/40">
-          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">原始 code / message</div>
-          <div class="px-3 py-2 text-gray-700">错误归一化 + 统一前缀</div>
-        </div>
-
-        <div class="grid grid-cols-2 border-t border-pink-100">
-          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">手写发布脚本易误发</div>
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">手拼 publish 命令易误发</div>
           <div class="px-3 py-2 text-gray-700">两段式：预览→确认</div>
         </div>
 
         <div class="grid grid-cols-2 border-t border-pink-100 bg-gray-50/40">
-          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">子路径 404 / 路由配置</div>
-          <div class="px-3 py-2 text-gray-700">base: './ ' + hash 路由开箱即用</div>
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">入口散落、类型自维护</div>
+          <div class="px-3 py-2 text-gray-700">8 namespace + 完整 TS 类型</div>
+        </div>
+
+        <div class="grid grid-cols-2 border-t border-pink-100">
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">SDK 升级要改类型</div>
+          <div class="px-3 py-2 text-gray-700">Proxy 转发，新方法零成本跟随</div>
+        </div>
+
+        <div class="grid grid-cols-2 border-t border-pink-100 bg-gray-50/40">
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">mock 刷新即丢</div>
+          <div class="px-3 py-2 text-gray-700">localStorage 持久化，刷新恢复</div>
+        </div>
+
+        <div class="grid grid-cols-2 border-t border-pink-100">
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">无环境判断、靠 if 硬编码</div>
+          <div class="px-3 py-2 text-gray-700">env 自动识别 Dev / Preview / Prod</div>
+        </div>
+
+        <div class="grid grid-cols-2 border-t border-pink-100 bg-gray-50/40">
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">从零搭、规范靠文档</div>
+          <div class="px-3 py-2 text-gray-700">模板即规范，fork 即可开工</div>
         </div>
 
         <div class="grid grid-cols-2 border-t border-pink-100">
@@ -167,6 +171,10 @@
 
 await toy.ready()
 await rank.submit({ score: 100 })
+rank.override('list').mock((req, ctx) => {
+  ctx.store.set('lastList', req)
+  return [{ rank: 1, score: 100, name: req.name }]
+})
 const list = await rank.list()
 await cloud.set({ total: 7 })
 const me = await user.profile()</code></pre>
@@ -207,16 +215,5 @@ const me = await user.profile()</code></pre>
         </li>
       </ol>
     </div>
-
-    <p class="text-xs text-gray-400 text-center">
-      基于 MIT 协议开源 ·
-      <a
-        href="https://github.com/imba97/bilibili-toy-starter"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="text-pink-500 hover:underline"
-        >GitHub 仓库</a
-      >
-    </p>
   </section>
 </template>
