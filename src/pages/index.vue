@@ -6,8 +6,8 @@
 // 签到成功一次 setCloudStorage 批量写 + submitScore（§7-4 按事件提交）。
 
 import { onMounted, ref } from 'vue'
-import { rank, cloud, user, type ToySDK } from 'bilibili-toy'
-import { initToy, toErrorMessage, isToyAvailable } from '@/composables/useToy'
+import { rank, cloud, user } from 'bilibili-toy'
+import { initToy, toErrorMessage } from '@/composables/useToy'
 import {
   STORAGE_KEYS,
   formatDate,
@@ -95,13 +95,6 @@ async function checkin() {
 
 <template>
   <section class="w-full max-w-sm flex flex-col items-center gap-6">
-    <p
-      v-if="isMockEnvRef"
-      class="px-3 py-1 text-xs rounded-full bg-amber-100 text-amber-700 font-medium"
-    >
-      演示模式：数据存在浏览器本地，不会上传
-    </p>
-
     <div
       class="w-full px-6 py-8 rounded-2xl bg-white shadow-sm border border-pink-200 flex flex-col items-center gap-4"
     >
@@ -111,16 +104,16 @@ async function checkin() {
       </template>
 
       <template v-else>
-        <div v-if="user" class="flex items-center gap-2">
+        <div v-if="userProfile" class="flex items-center gap-2">
           <img
-            v-if="user.avatar"
-            :src="user.avatar"
-            :alt="user.nickname"
+            v-if="userProfile.avatar"
+            :src="userProfile.avatar"
+            :alt="userProfile.nickname"
             class="w-8 h-8 rounded-full"
             referrerpolicy="no-referrer"
           />
           <span v-else class="i-carbon:user-avatar-filled text-2xl text-gray-300" />
-          <span class="text-sm text-gray-600 font-medium">{{ user.nickname }}</span>
+          <span class="text-sm text-gray-600 font-medium">{{ userProfile.nickname }}</span>
         </div>
 
         <div class="text-center">
