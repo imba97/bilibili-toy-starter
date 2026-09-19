@@ -15,7 +15,8 @@ const REPO_URL = 'https://github.com/imba97/bilibili-toy-starter'
 
 const navItems = [
   { to: '/', label: '签到', icon: 'i-carbon:checkbox-checked-filled' },
-  { to: '/rank', label: '排行榜', icon: 'i-carbon:trophy' }
+  { to: '/rank', label: '排行榜', icon: 'i-carbon:trophy' },
+  { to: '/about', label: '关于', icon: 'i-carbon:information' }
 ]
 
 // Build-time constants injected by `buildInfoPlugin` (see vite.config.ts).
