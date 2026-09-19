@@ -26,7 +26,7 @@ const navItems = [
 // On a real git checkout both are non-empty; on shallow / non-git builds
 // `__BUILD_COMMIT__` is '' and we hide the footer block entirely.
 const commitFull = __BUILD_COMMIT__
-const commitShort = commitFull.slice(0, 7).toUpperCase()
+const commitShort = commitFull.slice(0, 7).toLowerCase()
 const appVersion = __APP_VERSION__
 const commitHref = commitFull ? `${REPO_URL}/commit/${commitFull}` : REPO_URL
 const showFooter = commitFull !== ''
