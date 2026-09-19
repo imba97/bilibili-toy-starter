@@ -12,10 +12,26 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { routes, handleHotUpdate } from 'vue-router/auto-routes'
+import { toy } from 'bilibili-toy'
 import '@unocss/reset/tailwind.css'
 import 'virtual:uno.css'
 import './styles/main.css'
 import App from './App.vue'
+
+// dev 模式启用 mock：所有 namespace 调用走 mock handler，无 RPC、无握手超时。
+// Toy 平台 preview 域名（/toy/preview/<id>/）下 host 故意不注入 toy id，
+// SDK 业务能力（getCloudStorage / getRankList / getMyRank 等）会全部 reject，
+// 因此 preview 也走 mock，让页面能展示完整业务效果。正式发布（/toy/<slug>/）
+// 不会命中此分支，走真实 SDK。
+const isPreviewUrl = typeof location !== 'undefined' && location.pathname.includes('/toy/preview/')
+if (import.meta.env.DEV || isPreviewUrl) {
+  toy.enableMock()
+  // 注册业务侧 mock handler —— 必须在 enableMock 之后、第一次 namespace
+  // 调用之前完成。namespace.override(key).mock(h) 会原地替换 builder 的
+  // _mock 槽位，路由层 lookup 时直接看到业务版 handler。
+  // 用 void 标记：动态 import 是副作用，不需要 await；ESLint no-floating-promises 抑制。
+  void import('@/mock')
+}
 
 const router = createRouter({
   history: createWebHashHistory(),

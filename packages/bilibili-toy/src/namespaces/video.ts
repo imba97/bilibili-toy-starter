@@ -1,10 +1,12 @@
 // filepath: packages/bilibili-toy/src/namespaces/video.ts
 //
-// 视频能力 —— 透传官方 getVideoUserActions。
+// 视频能力 —— SDK 骨架。空响应兜底由 mock/defaults.ts 提供。
 
-import { createNamespace } from '../namespace'
+import { defineNamespace, useCapability } from '../namespace'
+import { videoUserActionsDefault } from '../mock/defaults'
 
-/** 视频能力 —— 透传官方 getVideoUserActions。方法签名由 ToySDK.Toy 自动推导。 */
-export const video = createNamespace({
-  actions: 'getVideoUserActions'
-} as const)
+export const video = defineNamespace('video', {
+  actions: useCapability<ToySDK.VideoUserActionsReq | undefined>('getVideoUserActions').mock(
+    videoUserActionsDefault
+  )
+})

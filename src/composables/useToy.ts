@@ -9,8 +9,20 @@ import { ref } from 'vue'
 /** Toy 平台是否可用（未 ready 或不可用为 false） */
 export const isToyAvailable = ref(false)
 
-/** 初始化 Toy SDK。页面首个 SDK 请求前 await 它即可。 */
+/**
+ * 初始化 Toy SDK。页面首个 SDK 请求前 await 它即可。
+ *
+ * dev + mock 模式：main.ts 已调用 toy.enableMock()，namespace 直接走 mock handler，
+ * 不依赖 ready() 结果。本函数退化为快速 resolve，避免 dev 模式下 5s 探测等待。
+ *
+ * 生产模式：调用 toy.ready()，超时抛 ToyNotAvailableError → isToyAvailable=false，
+ * 业务侧据此渲染降级骨架。
+ */
 export async function initToy(): Promise<void> {
+  if (toy.mockEnabled()) {
+    isToyAvailable.value = true
+    return
+  }
   try {
     await toy.ready()
     isToyAvailable.value = true

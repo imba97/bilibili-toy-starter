@@ -1,12 +1,11 @@
 // filepath: packages/bilibili-toy/src/namespaces/media.ts
 //
-// 媒体能力 —— 透传官方 requestCamera / requestMicrophone / stopMedia。
+// 媒体能力 —— SDK 骨架（不预置空 mock，浏览器 getUserMedia 走透传即可）。
 
-import { createNamespace } from '../namespace'
+import { defineNamespace, useCapability } from '../namespace'
 
-/** 媒体能力 —— 透传官方 requestCamera / requestMicrophone / stopMedia。方法签名由 ToySDK.Toy 自动推导。 */
-export const media = createNamespace({
-  requestCamera: 'requestCamera',
-  requestMicrophone: 'requestMicrophone',
-  stopMedia: 'stopMedia'
-} as const)
+export const media = defineNamespace('media', {
+  requestCamera: useCapability<ToySDK.MediaRelayOptions | undefined>('requestCamera'),
+  requestMicrophone: useCapability('requestMicrophone'),
+  stopMedia: useCapability('stopMedia')
+})

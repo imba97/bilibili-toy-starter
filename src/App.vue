@@ -9,6 +9,9 @@
 //   - `base: './'` in vite.config.ts (Toy platform requires relative URLs)
 //   - hash history in main.ts (history mode 404s under /toy/<slug>/)
 
+import { computed } from 'vue'
+import { toy } from 'bilibili-toy'
+
 // Repo URL is hardcoded — change here if you fork. Used for both the GitHub
 // icon link and the footer commit link.
 const REPO_URL = 'https://github.com/imba97/bilibili-toy-starter'
@@ -27,6 +30,24 @@ const commitShort = commitFull.slice(0, 7).toUpperCase()
 const appVersion = __APP_VERSION__
 const commitHref = commitFull ? `${REPO_URL}/commit/${commitFull}` : REPO_URL
 const showFooter = commitFull !== ''
+
+// 运行时实际只有两个环境：Mock（本地假数据，含 dev 与 preview URL 两个来源）
+// 与 Production（正式发布，走真实 ToySDK）。footer 用来提示当前是什么环境；
+// preview 单独标 "Preview" 便于区分来源，但底层 SDK 行为与 Mock 一致。
+type AppMode = 'mock' | 'prod'
+const isPreviewUrl = typeof location !== 'undefined' && location.pathname.includes('/toy/preview/')
+const mode = computed<AppMode>(() => (toy.mockEnabled() ? 'mock' : 'prod'))
+const modeLabel = computed(() => {
+  if (mode.value === 'prod') return 'Production'
+  return isPreviewUrl ? 'Preview' : 'Mock'
+})
+const modeClass = computed(() =>
+  mode.value === 'prod'
+    ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+    : isPreviewUrl
+      ? 'bg-sky-100 text-sky-700 border-sky-200'
+      : 'bg-amber-100 text-amber-700 border-amber-200'
+)
 </script>
 
 <template>
@@ -87,6 +108,20 @@ const showFooter = commitFull !== ''
     <footer v-if="showFooter" class="px-6 pb-4 pt-2 text-xs text-gray-400">
       <hr class="border-t border-pink-100 mb-3" />
       <div class="flex items-center justify-center gap-2 flex-wrap">
+        <span
+          class="px-2 py-0.5 rounded-full border text-[10px] font-medium tracking-wide"
+          :class="modeClass"
+          :title="
+            mode === 'prod'
+              ? '当前走真实 ToySDK'
+              : isPreviewUrl
+                ? 'Toy 平台预览 URL（/toy/preview/），强制走本地 mock 数据'
+                : '当前走本地 mock 数据'
+          "
+        >
+          {{ modeLabel }}
+        </span>
+        <span aria-hidden="true">·</span>
         <a
           :href="commitHref"
           target="_blank"

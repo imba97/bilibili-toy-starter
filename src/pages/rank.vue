@@ -9,7 +9,8 @@
 // 同分名次唯一，rank 本身就是稳定标识。拿不到 myRank 时不高亮（宁缺勿滥）。
 
 import { onMounted, ref } from 'vue'
-import { rank, user, type ToySDK } from 'bilibili-toy'
+import type { ToySDK } from 'bilibili-toy'
+import { rank, user } from '@/mock'
 import { initToy, toErrorMessage } from '@/composables/useToy'
 
 const list = ref<ToySDK.RankItem[]>([])
@@ -60,11 +61,15 @@ const medalClass = (rank: number) =>
         : ''
 
 /**
- * 高亮「我」：榜单条目不含 toyOpenId（d.ts 明确不给），
- * 用 getMyRank 的 rank 精确对应条目。rank 在榜单内唯一，不并列。
+ * 高亮「我」：d.ts 明确不给 toyOpenId/mid —— 唯一可用的近似锚点是 nickname。
+ * 仅当「我」上榜且在当前 list 内（list 是前 N 名，可能不含我）时高亮。
+ * 「我」的真实名次（包括排在 limit 之外的情况）由顶部 myRank 横幅承担。
  */
 const isMe = (entry: ToySDK.RankItem): boolean =>
-  myRank.value !== null && myRank.value.ranked && entry.rank === myRank.value.rank
+  myRank.value !== null &&
+  myRank.value.ranked &&
+  me.value !== null &&
+  entry.nickname === me.value.nickname
 </script>
 
 <template>

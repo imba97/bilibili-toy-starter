@@ -1,10 +1,10 @@
 // filepath: packages/bilibili-toy/src/namespaces/user.ts
 //
-// 用户能力 —— 透传官方 getUserProfile。
+// 用户信息能力 —— SDK 骨架。空响应兜底由 mock/defaults.ts 提供。
 
-import { createNamespace } from '../namespace'
+import { defineNamespace, useCapability } from '../namespace'
+import { userProfileDefault } from '../mock/defaults'
 
-/** 用户能力 —— 透传官方 getUserProfile。方法签名由 ToySDK.Toy 自动推导。 */
-export const user = createNamespace({
-  profile: 'getUserProfile'
-} as const)
+export const user = defineNamespace('user', {
+  profile: useCapability('getUserProfile').mock(userProfileDefault)
+})

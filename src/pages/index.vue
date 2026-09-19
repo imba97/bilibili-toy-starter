@@ -6,7 +6,8 @@
 // 签到成功一次 setCloudStorage 批量写 + submitScore（§7-4 按事件提交）。
 
 import { onMounted, ref } from 'vue'
-import { rank, cloud, user, isDeniedError, isToyError } from 'bilibili-toy'
+import { isDeniedError, isToyError } from 'bilibili-toy'
+import { rank, cloud, user } from '@/mock'
 import { initToy, toErrorMessage } from '@/composables/useToy'
 import {
   STORAGE_KEYS,

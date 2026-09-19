@@ -109,3 +109,14 @@ export function formatToyError(err: unknown): string {
 export function toErrorMessage(err: unknown): string {
   return formatToyError(err)
 }
+
+/**
+ * Toy host 元信息（toy id）尚未注入完毕 —— Toy 运行时 SDK 在 host 还在加载时
+ * 会被调用的能力 reject 此错误。等几百毫秒重试通常即可恢复。
+ *
+ * 形如 `[ToySDK] toy id not available on host`（也可能不带 `[ToySDK]` 前缀）。
+ */
+export function isToyHostNotReady(err: unknown): boolean {
+  if (!(err instanceof Error)) return false
+  return err.message.includes('toy id not available on host')
+}

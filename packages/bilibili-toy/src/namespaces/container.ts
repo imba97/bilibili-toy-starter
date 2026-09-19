@@ -1,12 +1,20 @@
 // filepath: packages/bilibili-toy/src/namespaces/container.ts
 //
-// 容器能力 —— 透传官方 onContainerChange / getContainerState / setContainerMode。
+// 容器能力 —— SDK 骨架。空响应兜底由 mock/defaults.ts 提供。
 
-import { createNamespace } from '../namespace'
+import { defineNamespace, useCapability } from '../namespace'
+import {
+  containerStateDefault,
+  onContainerChangeDefault,
+  setContainerModeDefault
+} from '../mock/defaults'
 
-/** 容器能力 —— 透传官方 onContainerChange / getContainerState / setContainerMode。方法签名由 ToySDK.Toy 自动推导。 */
-export const container = createNamespace({
-  onChange: 'onContainerChange',
-  state: 'getContainerState',
-  setMode: 'setContainerMode'
-} as const)
+export const container = defineNamespace('container', {
+  onChange: useCapability<ToySDK.ContainerStateListener | undefined>('onContainerChange').mock(
+    onContainerChangeDefault
+  ),
+  state: useCapability('getContainerState').mock(containerStateDefault),
+  setMode: useCapability<ToySDK.SetContainerModeReq | undefined>('setContainerMode').mock(
+    setContainerModeDefault
+  )
+})

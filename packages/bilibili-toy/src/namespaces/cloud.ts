@@ -1,15 +1,12 @@
 // filepath: packages/bilibili-toy/src/namespaces/cloud.ts
 //
-// 云存储能力 —— 透传官方 getCloudStorage / setCloudStorage / removeCloudStorage。
+// 云存储能力 —— SDK 骨架。空响应兜底由 mock/defaults.ts 提供。
 
-import { createNamespace } from '../namespace'
+import { defineNamespace, useCapability } from '../namespace'
+import { cloudGetDefault, cloudRemoveDefault, cloudSetDefault } from '../mock/defaults'
 
-/**
- * 云存储能力 —— 透传官方 getCloudStorage / setCloudStorage / removeCloudStorage。
- * 方法签名由 ToySDK.Toy 自动推导，这里只声明方法名映射。
- */
-export const cloud = createNamespace({
-  get: 'getCloudStorage',
-  set: 'setCloudStorage',
-  remove: 'removeCloudStorage'
-} as const)
+export const cloud = defineNamespace('cloud', {
+  get: useCapability<string[] | undefined>('getCloudStorage').mock(cloudGetDefault),
+  set: useCapability<Record<string, string> | undefined>('setCloudStorage').mock(cloudSetDefault),
+  remove: useCapability<string[] | undefined>('removeCloudStorage').mock(cloudRemoveDefault)
+})

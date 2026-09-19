@@ -1,12 +1,12 @@
 // filepath: packages/bilibili-toy/src/namespaces/author.ts
 //
-// 作者能力 —— 透传官方 getAuthorProfile / getAuthorVideos / getAuthorRelation。
+// 作者能力 —— SDK 骨架。空响应兜底由 mock/defaults.ts 提供。
 
-import { createNamespace } from '../namespace'
+import { defineNamespace, useCapability } from '../namespace'
+import { authorProfileDefault, authorRelationDefault, authorVideosDefault } from '../mock/defaults'
 
-/** 作者能力 —— 透传官方 getAuthorProfile / getAuthorVideos / getAuthorRelation。方法签名由 ToySDK.Toy 自动推导。 */
-export const author = createNamespace({
-  profile: 'getAuthorProfile',
-  videos: 'getAuthorVideos',
-  relation: 'getAuthorRelation'
-} as const)
+export const author = defineNamespace('author', {
+  profile: useCapability('getAuthorProfile').mock(authorProfileDefault),
+  videos: useCapability('getAuthorVideos').mock(authorVideosDefault),
+  relation: useCapability('getAuthorRelation').mock(authorRelationDefault)
+})
