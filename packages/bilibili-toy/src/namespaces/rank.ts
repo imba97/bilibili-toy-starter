@@ -2,11 +2,8 @@
 //
 // 排行榜能力 —— 透传官方 submitScore / getRankList / getMyRank。
 //
-// 注意（2026-09-19 实测）：线上 getRankList 返回的是原始 HTTP 响应包，
-// 且条目字段未按 d.ts 承诺映射 —— 实际是
-//   { code, message, ttl, data: { list: [{ rank, score, user_info: { name, face } }] } }
-// 而不是 d.ts 里的扁平 { rank, score, nickname, avatar }。
-// 所以 list() 做一层归一化，对外仍暴露 RankItem。
+// 注意：线上 getRankList 实际返回 `{ code, data: { list: [{ rank, score, user_info }] } }`，
+// 与 d.ts 承诺的扁平 RankItem 不一致，list() 内部做一层归一化。
 
 import { createNamespace } from '../namespace'
 
@@ -61,10 +58,14 @@ export const rank: RankNamespace = {
   list: async (req) => {
     const resp = (await rawRank.list(req)) as RawRankListResp | ToySDK.RankItem[]
 
-    // 线上实测结构：{ code, data: { list: [...] } }，条目是 { rank, score, user_info }
-    // 若某天 SDK 修好按 d.ts 直接返回扁平数组，归一化结果会退化为空 —— 这种情况请同步更新此处。
+    // 线上实测：{ code, data: { list: [{ rank, score, user_info }] } }
     if (!Array.isArray(resp) && Array.isArray(resp?.data?.list)) {
       return resp.data.list.map(normalizeRankEntry)
+    }
+
+    // 防御：若后端改回 d.ts 承诺的扁平数组，原样透传，避免退化为空。
+    if (Array.isArray(resp)) {
+      return resp as ToySDK.RankItem[]
     }
 
     return []

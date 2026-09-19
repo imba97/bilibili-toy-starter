@@ -47,6 +47,15 @@ if (!action || (action !== 'create' && action !== 'update')) {
   process.exit(2)
 }
 
+// --- Stage 0: build SDK dependency ---
+// 重要：toy 项目通过 `bilibili-toy: workspace:*` 引入 SDK，
+// 但 toy 平台拿到的是最终 dist，不是 source。
+// 所以发布前必须先把 SDK 重新 pack 进 `packages/bilibili-toy/dist/`，
+// 否则线上 Toy 跑的还是旧 dist —— 这正是之前"排行榜消失"事故的根因。
+// 通过 package.json 里 `sdk:pack` script 走，确保命令行只在一处维护。
+console.log('\n▸ [0/3] npm run sdk:pack\n')
+run('npm', ['run', 'sdk:pack'])
+
 // --- Stage 1: build ---
 console.log('\n▸ [1/3] vp build\n')
 run('vp', ['build'])

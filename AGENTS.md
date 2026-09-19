@@ -29,6 +29,13 @@ be one of two things:
   CLI's local history, not in the repo.
 - **Run `vp check` before committing.** It runs Oxfmt + Oxlint + tsc across
   the monorepo and is fast.
+- **Always re-pack SDK before publishing a Toy.** The toy bundles
+  `packages/bilibili-toy/dist/index.mjs` into the upload; if you only edit
+  SDK sources without running `pnpm --filter bilibili-toy pack`, the deployed
+  Toy still runs the previous SDK dist. `npm run toy:publish`,
+  `npm run toy:update`, and `node scripts/publish-toy.{mjs,ts}` do this
+  automatically — call those instead of running `toy create` / `toy update`
+  directly.
 
 ## Useful commands
 
@@ -37,12 +44,14 @@ be one of two things:
 | `npm run dev`                              | Start the toy dev server on http://localhost:5173            |
 | `npm run build`                            | Build the toy into `packages/starter-toy/dist/`              |
 | `npm run pack`                             | Build the library into `packages/starter-lib/dist/`          |
+| `npm run sdk:pack`                         | Build the SDK into `packages/bilibili-toy/dist/`             |
+| `npm run pack:zip`                         | Pack SDK + build toy + zip into a downloadable artifact      |
 | `npm run test`                             | Run vitest across packages                                   |
 | `npm run check`                            | Format + lint + type-check                                   |
 | `npm run fmt` / `lint` / `staged`          | Individual checks                                            |
 | `npm run toy:mylist`                       | List toys for the logged-in account                          |
-| `npm run toy:publish`                      | Build + `toy create ./packages/starter-toy/dist --json`      |
-| `npm run toy:update -- <id>`               | Build + `toy update <id> ./packages/starter-toy/dist --json` |
+| `npm run toy:publish`                      | Pack SDK + build + `toy create ./dist --json`                |
+| `npm run toy:update -- <id>`               | Pack SDK + build + `toy update <id> ./dist --json`           |
 | `node scripts/publish-toy.mjs create`      | Same as above but with friendlier output                     |
 | `node scripts/publish-toy.mjs update <id>` | Same as above but for updates                                |
 | `npm run release`                          | bumpp: bump version, commit, tag, push (CI does the publish) |
