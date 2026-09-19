@@ -1,6 +1,16 @@
 {
   "name": "bilibili-toy",
   "version": "0.1.1",
+  "description": "Typed SDK for the Bilibili Toy platform creator APIs",
+  "homepage": "https://github.com/imba97/bilibili-toy-starter#readme",
+  "bugs": {
+    "url": "https://github.com/imba97/bilibili-toy-starter/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imba97/bilibili-toy-starter.git"
+  },
   "type": "module",
   "exports": {
     ".": {
