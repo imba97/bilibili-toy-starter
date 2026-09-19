@@ -45,7 +45,7 @@ be one of two things:
 | `npm run toy:update -- <id>`               | Build + `toy update <id> ./packages/starter-toy/dist --json` |
 | `node scripts/publish-toy.mjs create`      | Same as above but with friendlier output                     |
 | `node scripts/publish-toy.mjs update <id>` | Same as above but for updates                                |
-| `npm run release` / `release:dry`          | bumpp: bump version, commit, tag, push                       |
+| `npm run release`                          | bumpp: bump version, commit, tag, push (CI does the publish) |
 
 ## Editing rules
 

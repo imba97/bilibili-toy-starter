@@ -25,7 +25,7 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.vue-tsc.json",
     "hooks:install": "vp config --hooks && vp hooks enable",
     "hooks:status": "vp hooks status",
-    "release:dry": "bumpp --dry-run",
+    "release": "bumpp -r",
     "toy:login": "toy login",
     "toy:mylist": "toy mylist --json",
     "toy:publish": "vp build && toy create ./dist --json",
