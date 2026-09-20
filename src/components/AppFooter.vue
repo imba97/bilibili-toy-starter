@@ -11,9 +11,7 @@
 // 业务页面无需关心 env 识别 —— 直接放在 layout 任意位置即可。
 import { computed } from 'vue'
 import { toy } from 'bilibili-toy'
-
-// 与 App.vue 顶栏 GitHub 图标共用,改仓库时这里也要同步改
-const REPO_URL = 'https://github.com/imba97/bilibili-toy-starter'
+import { REPO_URL } from '@/constants'
 
 type AppMode = 'development' | 'production'
 const isPreviewUrl = typeof location !== 'undefined' && location.pathname.includes('/toy/preview/')

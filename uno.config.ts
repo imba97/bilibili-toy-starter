@@ -1,27 +1,46 @@
 // filepath: uno.config.ts
 //
-// UnoCSS configuration. Loaded by `unocss/vite` via the plugin in vite.config.ts.
-// Keep this thin — only enable presets you actually use so the on-demand
-// generated CSS stays small for Toy distribution.
-//
-// Reset stylesheets (e.g. `@unocss/reset/tailwind.css`) are imported from
-// `src/main.ts`, NOT from here. UnoCSS presets don't bundle resets.
+// UnoCSS configuration for the Toy SPA. `unocss/vite` consumes this via vite.config.ts.
+// Toy 平台离线环境：icons 用本地 @iconify-json/*，不接 CDN。
 
-import { defineConfig, presetAttributify, presetIcons, presetUno, presetWebFonts } from 'unocss'
+import {
+  defineConfig,
+  presetAttributify,
+  presetIcons,
+  presetWind3,
+  transformerDirectives,
+  transformerVariantGroup
+} from 'unocss'
+
+const breakpoints = {
+  xs: '320px',
+  sm: '480px',
+  md: '768px',
+  lg: '1024px',
+  xl: '1280px',
+  '2xl': '1536px',
+  '3xl': '1920px'
+}
 
 export default defineConfig({
+  theme: {
+    breakpoints
+  },
+  shortcuts: [
+    ['h-header', 'h-12'],
+    ['pt-header', 'pt-12']
+  ],
   presets: [
-    presetUno(),
+    presetWind3(),
     presetAttributify(),
     presetIcons({
+      cdn: 'https://esm.sh/',
       scale: 1.2,
-      warn: false
-    }),
-    presetWebFonts({
-      provider: 'none', // Set to 'bunny' / 'google' / 'none' depending on whether the Toy can reach the CDN.
-      fonts: {
-        sans: 'Inter:400,500,700'
+      extraProperties: {
+        display: 'inline-block',
+        'vertical-align': 'text-bottom'
       }
     })
-  ]
+  ],
+  transformers: [transformerDirectives(), transformerVariantGroup()]
 })

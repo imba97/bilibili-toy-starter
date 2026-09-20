@@ -44,6 +44,7 @@
   "devDependencies": {
     "@iconify-json/carbon": "^1.2.27",
     "@iconify-json/svg-spinners": "^1.2.4",
+    "@iconify-json/tabler": "^1.2.38",
     "@types/archiver": "^8.0.0",
     "@types/node": "^22.20.3",
     "@unocss/reset": "^66.10.5",
