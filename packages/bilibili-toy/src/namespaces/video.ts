@@ -6,7 +6,6 @@ import { defineNamespace, useCapability } from '../namespace'
 import { videoUserActionsDefault } from '../mock/defaults'
 
 export const video = defineNamespace('video', {
-  actions: useCapability<ToySDK.VideoUserActionsReq | undefined>('getVideoUserActions').mock(
-    videoUserActionsDefault
-  )
+  actions:
+    useCapability<ToySDK.VideoUserActionsReq>('getVideoUserActions').mock(videoUserActionsDefault)
 })

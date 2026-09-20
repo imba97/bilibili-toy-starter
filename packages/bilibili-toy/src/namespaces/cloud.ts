@@ -6,7 +6,8 @@ import { defineNamespace, useCapability } from '../namespace'
 import { cloudGetDefault, cloudRemoveDefault, cloudSetDefault } from '../mock/defaults'
 
 export const cloud = defineNamespace('cloud', {
+  // getCloudStorage：业务侧不传 keys 时返回整个 store —— req 可选
   get: useCapability<string[] | undefined>('getCloudStorage').mock(cloudGetDefault),
-  set: useCapability<Record<string, string> | undefined>('setCloudStorage').mock(cloudSetDefault),
-  remove: useCapability<string[] | undefined>('removeCloudStorage').mock(cloudRemoveDefault)
+  set: useCapability<Record<string, string>>('setCloudStorage').mock(cloudSetDefault),
+  remove: useCapability<string[]>('removeCloudStorage').mock(cloudRemoveDefault)
 })

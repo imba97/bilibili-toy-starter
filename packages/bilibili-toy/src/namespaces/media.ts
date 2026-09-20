@@ -5,7 +5,8 @@
 import { defineNamespace, useCapability } from '../namespace'
 
 export const media = defineNamespace('media', {
-  requestCamera: useCapability<ToySDK.MediaRelayOptions | undefined>('requestCamera'),
+  requestCamera: useCapability<ToySDK.MediaRelayOptions>('requestCamera'),
+  // 无参能力 —— Req 走 void 默认值
   requestMicrophone: useCapability('requestMicrophone'),
   stopMedia: useCapability('stopMedia')
 })

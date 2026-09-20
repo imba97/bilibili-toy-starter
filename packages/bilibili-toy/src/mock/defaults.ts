@@ -28,19 +28,19 @@ const ONE_PX_PNG_DATAURL =
 // ────────────────────────────────────────────────────────────────────────
 
 /** navigate：在 dev 模式不真跳转，仅记日志 */
-export const navigateDefault: MockHandler<ToySDK.NavigateReq | undefined> = (req) => {
+export const navigateDefault: MockHandler<ToySDK.NavigateReq> = (req) => {
   // eslint-disable-next-line no-console
   console.log('[toy:mock] navigate', req)
 }
 
 /** share：拉起 B站 App 分享面板，dev 模式无面板，仅记日志 */
-export const shareDefault: MockHandler<ToySDK.ShareReq | undefined> = (req) => {
+export const shareDefault: MockHandler<ToySDK.ShareReq> = (req) => {
   // eslint-disable-next-line no-console
   console.log('[toy:mock] share', req)
 }
 
 /** getQrCode：返回一个 1×1 占位图 + 当前 URL 作为二维码编码内容 */
-export const qrCodeDefault: MockHandler<ToySDK.QrCodeReq | undefined> = (req) => {
+export const qrCodeDefault: MockHandler<ToySDK.QrCodeReq> = (req) => {
   const path = req?.path ?? 'index.html'
   const url =
     typeof location !== 'undefined'
@@ -50,7 +50,7 @@ export const qrCodeDefault: MockHandler<ToySDK.QrCodeReq | undefined> = (req) =>
 }
 
 /** saveImageToAlbum：dev 模式无真相册，返回空 localPath */
-export const saveImageDefault: MockHandler<ToySDK.SaveImageReq | undefined> = (req) => {
+export const saveImageDefault: MockHandler<ToySDK.SaveImageReq> = (req) => {
   // eslint-disable-next-line no-console
   console.log('[toy:mock] saveImageToAlbum', req)
   return { localPath: '' }
@@ -96,28 +96,27 @@ export const authorVideosDefault: MockHandler = () => ({
 
 export const authorRelationDefault: MockHandler = () => ({ status: 'unsupported' })
 
-export const videoUserActionsDefault: MockHandler<ToySDK.VideoUserActionsReq | undefined> = (
-  _req
-) => ({ status: 'unsupported', items: [] })
+export const videoUserActionsDefault: MockHandler<ToySDK.VideoUserActionsReq> = (_req) => ({
+  status: 'unsupported',
+  items: []
+})
 
 // ────────────────────────────────────────────────────────────────────────
 // 排行榜
 // ────────────────────────────────────────────────────────────────────────
 
 /** submitScore：返回 score: 0，提示「未提交任何分数」 */
-export const submitScoreDefault: MockHandler<ToySDK.SubmitScoreReq | undefined> = () => ({
-  score: 0
-})
+export const submitScoreDefault: MockHandler<ToySDK.SubmitScoreReq> = () => ({ score: 0 })
 
 /** getRankList：返回空数组，UI 渲染空态 */
-export const rankListDefault: MockHandler<ToySDK.RankListReq | undefined> = () => []
+export const rankListDefault: MockHandler<ToySDK.RankListReq> = () => []
 
 /**
  * getMyRank：返回「未上榜」标准响应。
  * 按 MyRankResp.d.ts：ranked=false + rank=0 + score=0，
  * UI 用 ranked 分支展示「未上榜」提示。
  */
-export const myRankDefault: MockHandler<ToySDK.MyRankReq | undefined> = () => ({
+export const myRankDefault: MockHandler<ToySDK.MyRankReq> = () => ({
   ranked: false,
   rank: 0,
   score: 0
@@ -127,17 +126,17 @@ export const myRankDefault: MockHandler<ToySDK.MyRankReq | undefined> = () => ({
 // 云存储
 // ────────────────────────────────────────────────────────────────────────
 
-/** getCloudStorage：返回空 KV */
+/** getCloudStorage：返回空 KV —— req 可选（不传 = 整个 store） */
 export const cloudGetDefault: MockHandler<string[] | undefined> = () => ({})
 
 /** setCloudStorage：dev 模式仅记日志，不落 mock store（业务侧通常会 override） */
-export const cloudSetDefault: MockHandler<Record<string, string> | undefined> = (req) => {
+export const cloudSetDefault: MockHandler<Record<string, string>> = (req) => {
   // eslint-disable-next-line no-console
   console.log('[toy:mock] setCloudStorage', req)
 }
 
 /** removeCloudStorage：dev 模式仅记日志 */
-export const cloudRemoveDefault: MockHandler<string[] | undefined> = (req) => {
+export const cloudRemoveDefault: MockHandler<string[]> = (req) => {
   // eslint-disable-next-line no-console
   console.log('[toy:mock] removeCloudStorage', req)
 }
@@ -165,9 +164,7 @@ const unknownDeviceState = (): ToySDK.ToyContainerState => ({
 export const containerStateDefault: MockHandler = () => unknownDeviceState()
 
 /** setContainerMode：仅记日志，不修改任何状态 */
-export const setContainerModeDefault: MockHandler<ToySDK.SetContainerModeReq | undefined> = (
-  req
-) => {
+export const setContainerModeDefault: MockHandler<ToySDK.SetContainerModeReq> = (req) => {
   // eslint-disable-next-line no-console
   console.log('[toy:mock] setContainerMode', req)
 }
@@ -176,7 +173,6 @@ export const setContainerModeDefault: MockHandler<ToySDK.SetContainerModeReq | u
  * onContainerChange：返回一个 noop 取消函数。dev 模式容器状态不会真变，
  * 调用方拿到取消函数即可（不会立刻触发回调）。
  */
-export const onContainerChangeDefault: MockHandler<ToySDK.ContainerStateListener | undefined> =
-  () => () => {
-    /* noop 取消 */
-  }
+export const onContainerChangeDefault: MockHandler<ToySDK.ContainerStateListener> = () => () => {
+  /* noop 取消 */
+}

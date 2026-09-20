@@ -44,8 +44,9 @@ await cloud.set({ key: 'value' })
 import { toy, rank, MOCK_DEFAULT_USER_ID } from 'bilibili-toy'
 import { getMockOthers } from './data'
 
-toy.enableMock()                                              // 将 namespace 调用路由到 mock
-rank.override('list').mock(async (req, ctx) => {              // 替换 SDK 默认处理器
+toy.enableMock() // 将 namespace 调用路由到 mock
+rank.override('list').mock(async (req, ctx) => {
+  // 替换 SDK 默认处理器
   const me = { rank: 0, score: ctx.store.cloud.get('ci_total'), mid: MOCK_DEFAULT_USER_ID }
   return [...getMockOthers(), me].sort((a, b) => b.score - a.score).slice(0, req?.limit ?? 10)
 })
@@ -53,12 +54,12 @@ rank.override('list').mock(async (req, ctx) => {              // 替换 SDK 默�
 
 处理器接收的 `MockCtx` 字段：
 
-| 字段                  | 说明                                                              |
-| --------------------- | ----------------------------------------------------------------- |
-| `store`               | 共享 `MockStore`（`cloud: Map`、`rank: RankState`、`mockUserId`） |
-| `mockUserId`          | 当前 mock 用户 mid（等价于 `ctx.store.mockUserId`）               |
-| `delay()`             | 在 `latencyMs`（默认 80ms）后 resolve — 模拟一次 RPC              |
-| `log(ns, m, r, resp?)`| 在控制台打印 `[toy:mock] ns.method req=…`                         |
+| 字段                   | 说明                                                              |
+| ---------------------- | ----------------------------------------------------------------- |
+| `store`                | 共享 `MockStore`（`cloud: Map`、`rank: RankState`、`mockUserId`） |
+| `mockUserId`           | 当前 mock 用户 mid（等价于 `ctx.store.mockUserId`）               |
+| `delay()`              | 在 `latencyMs`（默认 80ms）后 resolve — 模拟一次 RPC              |
+| `log(ns, m, r, resp?)` | 在控制台打印 `[toy:mock] ns.method req=…`                         |
 
 `toy.enableMock({ latencyMs, mockUserId })` 用于配置上下文；
 `toy.mockEnabled()` 返回当前状态；
@@ -71,28 +72,28 @@ rank.override('list').mock(async (req, ctx) => {              // 替换 SDK 默�
 
 ### `toy` — 平台能力
 
-| 方法                          | 说明                                                       |
-| ----------------------------- | ---------------------------------------------------------- |
-| `toy.ready(timeoutMs?)`       | 等待 `window.toy`，并缓存单例。默认超时 5000ms             |
-| `toy.isAvailable()`           | 同步检测 `window.toy` 是否存在                             |
-| `toy.isSupport(ability)`      | 查询平台是否支持某个能力                                   |
-| `toy.enableMock(opts?)`       | 将 namespace 调用路由到 mock 处理器（见上文）              |
-| `toy.disableMock()`           | 关闭 mock，恢复 namespace 调用到真实 RPC                   |
-| `toy.mockEnabled()`           | 当前是否处于 mock 模式                                     |
-| `toy.resetMock()`             | 清空持久化的 mock 数据，启用标志保持不变                   |
+| 方法                     | 说明                                           |
+| ------------------------ | ---------------------------------------------- |
+| `toy.ready(timeoutMs?)`  | 等待 `window.toy`，并缓存单例。默认超时 5000ms |
+| `toy.isAvailable()`      | 同步检测 `window.toy` 是否存在                 |
+| `toy.isSupport(ability)` | 查询平台是否支持某个能力                       |
+| `toy.enableMock(opts?)`  | 将 namespace 调用路由到 mock 处理器（见上文）  |
+| `toy.disableMock()`      | 关闭 mock，恢复 namespace 调用到真实 RPC       |
+| `toy.mockEnabled()`      | 当前是否处于 mock 模式                         |
+| `toy.resetMock()`        | 清空持久化的 mock 数据，启用标志保持不变       |
 
 ### Namespace
 
-| Namespace   | 方法                                                              |
-| ----------- | ----------------------------------------------------------------- |
-| `rank`      | `submit(req)` · `list(req?)` · `me(req?)`                         |
-| `cloud`     | `get(keys?)` · `set(items)` · `remove(keys)`                      |
-| `user`      | `profile()`                                                       |
-| `author`    | `profile()` · `videos(req)` · `relation()`                        |
-| `video`     | `actions(req)`                                                    |
+| Namespace   | 方法                                                                               |
+| ----------- | ---------------------------------------------------------------------------------- |
+| `rank`      | `submit(req)` · `list(req?)` · `me(req?)`                                          |
+| `cloud`     | `get(keys?)` · `set(items)` · `remove(keys)`                                       |
+| `user`      | `profile()`                                                                        |
+| `author`    | `profile()` · `videos(req)` · `relation()`                                         |
+| `video`     | `actions(req)`                                                                     |
 | `share`     | `navigate(req)` · `to(req)` · `qrCode(req?)` · `saveImage(req)` · `closeBrowser()` |
-| `container` | `onChange(cb)` · `state()` · `setMode(req)`                       |
-| `media`     | `requestCamera(opts?)` · `requestMicrophone()` · `stopMedia(stream)` |
+| `container` | `onChange(cb)` · `state()` · `setMode(req)`                                        |
+| `media`     | `requestCamera(opts?)` · `requestMicrophone()` · `stopMedia(stream)`               |
 
 每个 namespace 都暴露 `override(key).mock(handler)` 用于注册 mock 处理器。覆盖目标会按 namespace 声明的能力做类型推导，因此处理器的 `req` 参数类型可被正确推断。
 
@@ -125,14 +126,14 @@ try {
 }
 ```
 
-| 帮助函数                | 用途                                                       |
-| ----------------------- | ---------------------------------------------------------- |
-| `ToyNotAvailableError`  | `window.toy` 缺失或握手超时                                |
-| `isToyError(err)`       | 判断一个值是否是 Toy SDK 抛出的错误                        |
-| `isDeniedError(err)`    | 用户拒绝授权 / 上下文不可用                                |
-| `isToyHostNotReady(err)`| 瞬态 `toy id not available on host` 竞态错误               |
-| `normalizeToyError(err)`| 用 `[bilibili-toy]` 前缀包装并保留 Toy 错误字段            |
-| `toErrorMessage(err)`   | 获取用于展示的字符串（等同于 `formatToyError`）            |
+| 帮助函数                 | 用途                                            |
+| ------------------------ | ----------------------------------------------- |
+| `ToyNotAvailableError`   | `window.toy` 缺失或握手超时                     |
+| `isToyError(err)`        | 判断一个值是否是 Toy SDK 抛出的错误             |
+| `isDeniedError(err)`     | 用户拒绝授权 / 上下文不可用                     |
+| `isToyHostNotReady(err)` | 瞬态 `toy id not available on host` 竞态错误    |
+| `normalizeToyError(err)` | 用 `[bilibili-toy]` 前缀包装并保留 Toy 错误字段 |
+| `toErrorMessage(err)`    | 获取用于展示的字符串（等同于 `formatToyError`） |
 
 ## 重试
 
@@ -146,7 +147,7 @@ await withRetry(() => rank.submit({ score: 100 }))
 await withRetry(() => cloud.get(), {
   maxAttempts: 5,
   baseDelayMs: 500,
-  shouldRetry: err => isToyHostNotReady(err) || isRetryableError(err)
+  shouldRetry: (err) => isToyHostNotReady(err) || isRetryableError(err)
 })
 ```
 

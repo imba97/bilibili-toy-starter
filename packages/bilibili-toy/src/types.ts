@@ -7,42 +7,42 @@
 //   - 本文件描述 SDK 这层"namespace 描述符 + mock handler"的私有协议
 //   - 当 ToySDK 改名 / 加字段时，本文件不动，只动 namespaces/* 内的 mock 返回
 
-// 转发 export，避免相对路径深嵌套
 import type { MockCtx } from './mock/ctx'
 export type { MockCtx } from './mock/ctx'
 
 /**
- * 单个能力的描述。
+ * 单个能力的运行时描述（闭包持有 mock handler）。
  *
  * - `sdk`: window.toy 上的方法名（透传）
- * - `mock`: 可选 mock handler，dev / 预览模式下由 defineNamespace 自动路由到此
+ * - 真正的 mock handler 由 `useCapability` 内部闭包持有，类型层不暴露
+ *
+ * 本接口不带 Req/Resp 泛型 —— 它是「描述」而不是「构建」，
+ * Req/Resp 泛型只在 `CapabilityBuilder` / `MockHandler` 上有意义。
  */
-export interface Capability<Req = unknown, Resp = unknown> {
+export interface Capability {
   /** window.toy 上的方法名 */
   sdk: string
-  /** dev 模式下的 mock handler；未实现时 dev 下会走真 SDK（可能 RPC 失败） */
-  mock?: MockHandler<Req, Resp>
 }
 
 /**
- * useCapability 的返回类型。
+ * `useCapability` 的返回类型 —— 链式挂 mock handler。
  *
- * builder 不是 `Capability` 子类型 —— 它通过 `_mock` 内部槽位保存 handler
- *（如果调用了 `.mock(fn)`），而不是 `mock` 字段。这样接口上
- *   - `sdk` 是 value 字段
- *   - `mock` 是 method（用于链式挂 handler）
- *   - `_mock` 是 handler 真正存储位置
+ *   - `sdk`             window.toy 方法名
+ *   - `mock(h)`         挂 handler（替换默认），返回 builder 支持继续链式
+ *   - `mock` 的入参类型由 `useCapability<Req>` 决定，Req 缺省 = void
  *
- * 为什么不直接复用 `Capability.mock` 字段：同名成员在 TS interface 合并中冲突，
- * 且 method 与 MockHandler 是不同形态（method 自带 `this`，MockHandler 是二元函数）。
+ * 设计：去掉原本的 `_mock` 内部槽位。`mock()` 用闭包变量持有 handler，路由层
+ * 通过 getter 拿，业务侧 `override(key).mock(h)` 仍能原地替换。
+ *
+ * `Resp` 用 `any`：mock lambda 返回值类型由函数体推导；Resp 仅充当
+ * builder ↔ handler 的「无约束桥」，与 lambda 体返回值类型推导互不影响。
  */
-export interface CapabilityBuilder<Req = unknown, Resp = unknown> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface CapabilityBuilder<Req = void, Resp = any> {
   /** window.toy 上的方法名 */
-  sdk: string
-  /** 链式挂 mock handler；调用后内部 `_mock` 槽位填入 handler */
-  mock: (handler: MockHandler<Req, Resp>) => CapabilityBuilder<Req, Resp>
-  /** 内部槽位：已挂的 mock handler（defineNamespace 路由时使用） */
-  _mock?: MockHandler<Req, Resp>
+  readonly sdk: string
+  /** 挂 mock handler；返回 builder 可继续链式 */
+  mock(handler: MockHandler<Req, Resp>): CapabilityBuilder<Req, Resp>
 }
 
 /**
@@ -50,8 +50,11 @@ export interface CapabilityBuilder<Req = unknown, Resp = unknown> {
  *
  * 与 ToySDK 解耦 —— handler 返回任意形态，TS 类型由 namespace 文件
  * 在 Capability 的 Resp 泛型上保证。ctx 提供 store / 日志 / 延迟。
+ *
+ * `Req` 缺省 `void`：无参能力（closeBrowser / stopMedia 等）直接写
+ *   `() => ({ ... })`，不必再写 `(_req: void) => ...`。
+ *
+ * `Resp` 缺省 `any`：lambda 返回值由函数体自动推导；Resp 仅作无约束桥。
  */
-export type MockHandler<Req = unknown, Resp = unknown> = (
-  req: Req,
-  ctx: MockCtx
-) => Resp | Promise<Resp>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type MockHandler<Req = void, Resp = any> = (req: Req, ctx: MockCtx) => Resp | Promise<Resp>

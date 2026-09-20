@@ -6,7 +6,7 @@ import { defineNamespace, useCapability } from '../namespace'
 import { myRankDefault, rankListDefault, submitScoreDefault } from '../mock/defaults'
 
 export const rank = defineNamespace('rank', {
-  submit: useCapability<ToySDK.SubmitScoreReq | undefined>('submitScore').mock(submitScoreDefault),
-  list: useCapability<ToySDK.RankListReq | undefined>('getRankList').mock(rankListDefault),
-  me: useCapability<ToySDK.MyRankReq | undefined>('getMyRank').mock(myRankDefault)
+  submit: useCapability<ToySDK.SubmitScoreReq>('submitScore').mock(submitScoreDefault),
+  list: useCapability<ToySDK.RankListReq>('getRankList').mock(rankListDefault),
+  me: useCapability<ToySDK.MyRankReq>('getMyRank').mock(myRankDefault)
 })

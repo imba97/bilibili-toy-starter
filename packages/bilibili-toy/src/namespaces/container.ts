@@ -10,11 +10,11 @@ import {
 } from '../mock/defaults'
 
 export const container = defineNamespace('container', {
-  onChange: useCapability<ToySDK.ContainerStateListener | undefined>('onContainerChange').mock(
-    onContainerChangeDefault
-  ),
+  onChange:
+    useCapability<ToySDK.ContainerStateListener>('onContainerChange').mock(
+      onContainerChangeDefault
+    ),
   state: useCapability('getContainerState').mock(containerStateDefault),
-  setMode: useCapability<ToySDK.SetContainerModeReq | undefined>('setContainerMode').mock(
-    setContainerModeDefault
-  )
+  setMode:
+    useCapability<ToySDK.SetContainerModeReq>('setContainerMode').mock(setContainerModeDefault)
 })

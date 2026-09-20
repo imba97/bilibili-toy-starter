@@ -40,15 +40,11 @@
         <ul class="flex flex-col gap-1.5 text-sm text-gray-600">
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
-            <span
-              ><span class="font-medium text-gray-700">Mock override</span> · dev 零 RPC</span
-            >
+            <span><span class="font-medium text-gray-700">Mock override</span> · dev 零 RPC</span>
           </li>
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
-            <span
-              ><span class="font-medium text-gray-700">Host-ready retry</span> · 自动退避</span
-            >
+            <span><span class="font-medium text-gray-700">Host-ready retry</span> · 自动退避</span>
           </li>
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
@@ -58,15 +54,11 @@
           </li>
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
-            <span
-              ><span class="font-medium text-gray-700">两段式发布</span> · 预览确认再提交</span
-            >
+            <span><span class="font-medium text-gray-700">两段式发布</span> · 预览确认再提交</span>
           </li>
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
-            <span
-              ><span class="font-medium text-gray-700">vite-plus</span> · 一站式 CLI</span
-            >
+            <span><span class="font-medium text-gray-700">vite-plus</span> · 一站式 CLI</span>
           </li>
           <li class="flex items-start gap-1.5">
             <span class="i-carbon:chevron-right text-pink-400 mt-0.5 shrink-0 text-xs" />
@@ -98,17 +90,23 @@
         </div>
 
         <div class="grid grid-cols-2 border-t border-pink-100 bg-gray-50/40">
-          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">host 注入失败需手写重试</div>
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">
+            host 注入失败需手写重试
+          </div>
           <div class="px-3 py-2 text-gray-700">Host-ready retry 自动退避</div>
         </div>
 
         <div class="grid grid-cols-2 border-t border-pink-100">
-          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">手判 status / code / name</div>
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">
+            手判 status / code / name
+          </div>
           <div class="px-3 py-2 text-gray-700">isToyError / isDeniedError 一行判</div>
         </div>
 
         <div class="grid grid-cols-2 border-t border-pink-100 bg-gray-50/40">
-          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">手拼 publish 命令易误发</div>
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">
+            手拼 publish 命令易误发
+          </div>
           <div class="px-3 py-2 text-gray-700">两段式：预览→确认</div>
         </div>
 
@@ -128,7 +126,9 @@
         </div>
 
         <div class="grid grid-cols-2 border-t border-pink-100">
-          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">无环境判断、靠 if 硬编码</div>
+          <div class="px-3 py-2 border-r border-pink-100 text-gray-500">
+            无环境判断、靠 if 硬编码
+          </div>
           <div class="px-3 py-2 text-gray-700">env 自动识别 Dev / Preview / Prod</div>
         </div>
 

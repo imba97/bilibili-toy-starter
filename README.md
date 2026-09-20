@@ -58,8 +58,9 @@ const me = await user.profile()
 import { toy, rank, MOCK_DEFAULT_USER_ID } from 'bilibili-toy'
 import { getMockOthers, MOCK_SELF_AVATAR, MOCK_SELF_NICKNAME } from './data'
 
-toy.enableMock()                                              // namespace 调用全部路由到 mock
-rank.override('list').mock(async (req, ctx) => {              // 替换 SDK 默认处理器
+toy.enableMock() // namespace 调用全部路由到 mock
+rank.override('list').mock(async (req, ctx) => {
+  // 替换 SDK 默认处理器
   const me = { rank: 0, score: ctx.store.cloud.get('ci_total'), mid: MOCK_DEFAULT_USER_ID }
   return [...getMockOthers(), me].sort((a, b) => b.score - a.score).slice(0, req?.limit ?? 10)
 })
@@ -120,19 +121,19 @@ cd packages/bilibili-toy && pnpm publish --access public
 
 ## 命令速查
 
-| 命令                                | 作用                                       |
-| ----------------------------------- | ------------------------------------------ |
-| `npm run dev`                       | Toy 开发服务器                             |
-| `npm run build`                     | Toy 生产构建                               |
-| `npm run pack`                      | 库构建（tsdown via `vp pack`）             |
-| `npm run sdk:pack`                  | 仅构建 SDK                                 |
-| `npm run test`                      | 全包 Vitest                                |
-| `npm run check`                     | 格式化 + Lint + 类型检查                  |
-| `npm run fmt` / `lint` / `staged`   | 单项检查                                   |
-| `npm run toy:publish`               | 打包 SDK + 构建 + `toy create --json`      |
-| `npm run toy:update -- <id>`        | 打包 SDK + 构建 + `toy update <id> --json` |
-| `npm run toy:mylist`                | 列出当前账号下的 Toy                       |
-| `npm run release` / `release:dry`   | 升级版本号 + 提交 + 打 tag + 推送          |
+| 命令                              | 作用                                       |
+| --------------------------------- | ------------------------------------------ |
+| `npm run dev`                     | Toy 开发服务器                             |
+| `npm run build`                   | Toy 生产构建                               |
+| `npm run pack`                    | 库构建（tsdown via `vp pack`）             |
+| `npm run sdk:pack`                | 仅构建 SDK                                 |
+| `npm run test`                    | 全包 Vitest                                |
+| `npm run check`                   | 格式化 + Lint + 类型检查                   |
+| `npm run fmt` / `lint` / `staged` | 单项检查                                   |
+| `npm run toy:publish`             | 打包 SDK + 构建 + `toy create --json`      |
+| `npm run toy:update -- <id>`      | 打包 SDK + 构建 + `toy update <id> --json` |
+| `npm run toy:mylist`              | 列出当前账号下的 Toy                       |
+| `npm run release` / `release:dry` | 升级版本号 + 提交 + 打 tag + 推送          |
 
 ---
 

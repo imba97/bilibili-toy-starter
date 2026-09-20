@@ -12,11 +12,10 @@ import {
 } from '../mock/defaults'
 
 export const share = defineNamespace('share', {
-  navigate: useCapability<ToySDK.NavigateReq | undefined>('navigate').mock(navigateDefault),
-  to: useCapability<ToySDK.ShareReq | undefined>('share').mock(shareDefault),
-  qrCode: useCapability<ToySDK.QrCodeReq | undefined>('getQrCode').mock(qrCodeDefault),
-  saveImage: useCapability<ToySDK.SaveImageReq | undefined>('saveImageToAlbum').mock(
-    saveImageDefault
-  ),
+  navigate: useCapability<ToySDK.NavigateReq>('navigate').mock(navigateDefault),
+  to: useCapability<ToySDK.ShareReq>('share').mock(shareDefault),
+  qrCode: useCapability<ToySDK.QrCodeReq>('getQrCode').mock(qrCodeDefault),
+  saveImage: useCapability<ToySDK.SaveImageReq>('saveImageToAlbum').mock(saveImageDefault),
+  // closeBrowser 无参 —— Req 走 void 默认值
   closeBrowser: useCapability('closeBrowser').mock(closeBrowserDefault)
 })
