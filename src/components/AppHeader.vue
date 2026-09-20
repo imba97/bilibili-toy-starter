@@ -1,12 +1,12 @@
 <script setup lang="ts">
 // filepath: src/components/AppHeader.vue
 //
-// 顶部全宽固定 header：右上角 share/github 常驻；左上角 bilibili icon 与毛玻璃
+// 顶部全宽固定 header：右上角 github 常驻；左上角 bilibili icon 与毛玻璃
 // 背景同步（scrollY > 阈值时才显示，随背景渐入渐出）。路由导航 / 标题保持在
 // App.vue 的流式布局里（header 之外），保持原位置不动。
 //
 // 设计：
-//   - 右上角 share/github 永远 fixed 在视口顶部、常驻可见。
+//   - 右上角 github 永远 fixed 在视口顶部、常驻可见。
 //   - 左上角 bilibili icon + 毛玻璃背景层（absolute 在 header 后面、独立
 //     z-index）**同步**由 scrollY 控制渐显渐隐：> 阈值时一起出现，滚回顶端
 //     一起渐隐。scrolled 时用 justify-between 让 icon 贴左；未滚动时用
@@ -14,11 +14,10 @@
 //   - 切页（router.afterEach）立刻把 scrolled 复位为 false —— 新页面初始
 //     scrollTop=0，避免上一页 scrollY 误显。
 //
-// 分享走 toy.share.to；仓库入口用 src/constants 里的 REPO_URL。
+// 仓库入口用 src/constants 里的 REPO_URL。
 
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { share } from 'bilibili-toy'
 import { REPO_URL } from '@/constants'
 
 /** 毛玻璃背景的触发阈值：避免边界值/弹性滚动导致的 0-1 闪缩 */
@@ -47,14 +46,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('scroll', updateScroll)
   stopRouter()
 })
-
-async function handleShare() {
-  try {
-    await share.to({ path: 'index.html' })
-  } catch {
-    // 用户取消分享或 SDK 不可用时静默吞掉，不打断 UI
-  }
-}
 </script>
 
 <template>
@@ -81,18 +72,9 @@ async function handleShare() {
         :class="scrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'"
       />
 
-      <!-- 右上角：share + github。ml-auto 使其独立于左侧图标始终贴右，
+      <!-- 右上角：github。ml-auto 使其独立于左侧图标始终贴右，
            即使左侧图标隐藏也不会让右侧元素偏移。 -->
       <div class="flex items-center gap-2 text-gray-500 ml-auto">
-        <button
-          type="button"
-          aria-label="分享 Toy"
-          title="分享 Toy"
-          class="w-8 h-8 hover:text-pink-500 transition inline-flex items-center justify-center"
-          @click="handleShare"
-        >
-          <span class="i-tabler-share-3 w-5 h-5" aria-hidden="true" />
-        </button>
         <a
           :href="REPO_URL"
           target="_blank"
