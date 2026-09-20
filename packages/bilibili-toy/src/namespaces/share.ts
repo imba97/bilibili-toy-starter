@@ -2,7 +2,7 @@
 //
 // 分享与跳转能力 —— SDK 骨架。空响应兜底由 mock/defaults.ts 提供。
 
-import { defineNamespace, useCapability } from '../namespace'
+import { defineNamespace, defineCapability } from '../namespace'
 import {
   closeBrowserDefault,
   navigateDefault,
@@ -12,10 +12,10 @@ import {
 } from '../mock/defaults'
 
 export const share = defineNamespace('share', {
-  navigate: useCapability<ToySDK.NavigateReq>('navigate').mock(navigateDefault),
-  to: useCapability<ToySDK.ShareReq>('share').mock(shareDefault),
-  qrCode: useCapability<ToySDK.QrCodeReq>('getQrCode').mock(qrCodeDefault),
-  saveImage: useCapability<ToySDK.SaveImageReq>('saveImageToAlbum').mock(saveImageDefault),
+  navigate: defineCapability<ToySDK.NavigateReq>('navigate').mock(navigateDefault),
+  to: defineCapability<ToySDK.ShareReq>('share').mock(shareDefault),
+  qrCode: defineCapability<ToySDK.QrCodeReq>('getQrCode').mock(qrCodeDefault),
+  saveImage: defineCapability<ToySDK.SaveImageReq>('saveImageToAlbum').mock(saveImageDefault),
   // closeBrowser 无参 —— Req 走 void 默认值
-  closeBrowser: useCapability('closeBrowser').mock(closeBrowserDefault)
+  closeBrowser: defineCapability('closeBrowser').mock(closeBrowserDefault)
 })

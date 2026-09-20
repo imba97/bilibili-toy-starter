@@ -14,7 +14,7 @@ export type { MockCtx } from './mock/ctx'
  * 单个能力的运行时描述（闭包持有 mock handler）。
  *
  * - `sdk`: window.toy 上的方法名（透传）
- * - 真正的 mock handler 由 `useCapability` 内部闭包持有，类型层不暴露
+ * - 真正的 mock handler 由 `defineCapability` 内部闭包持有，类型层不暴露
  *
  * 本接口不带 Req/Resp 泛型 —— 它是「描述」而不是「构建」，
  * Req/Resp 泛型只在 `CapabilityBuilder` / `MockHandler` 上有意义。
@@ -25,11 +25,11 @@ export interface Capability {
 }
 
 /**
- * `useCapability` 的返回类型 —— 链式挂 mock handler。
+ * `defineCapability` 的返回类型 —— 链式挂 mock handler。
  *
  *   - `sdk`             window.toy 方法名
  *   - `mock(h)`         挂 handler（替换默认），返回 builder 支持继续链式
- *   - `mock` 的入参类型由 `useCapability<Req>` 决定，Req 缺省 = void
+ *   - `mock` 的入参类型由 `defineCapability<Req>` 决定，Req 缺省 = void
  *
  * 设计：去掉原本的 `_mock` 内部槽位。`mock()` 用闭包变量持有 handler，路由层
  * 通过 getter 拿，业务侧 `override(key).mock(h)` 仍能原地替换。

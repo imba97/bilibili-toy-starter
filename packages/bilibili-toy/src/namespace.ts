@@ -3,7 +3,7 @@
 // namespace 工厂 + capability 描述符。
 //
 // 两层入口：
-//   1. useCapability<Req>(sdk)         —— 声明一个能力
+//   1. defineCapability<Req>(sdk)       —— 声明一个能力
 //      .mock(handler)                   —— 可选挂 mock handler（仅 dev / 预览模式生效）
 //   2. defineNamespace(name, bindings)  —— 把一组能力装配成可调用的 namespace Proxy
 //
@@ -30,10 +30,10 @@ const isPromiseLike = (v: unknown): v is PromiseLike<unknown> =>
  *
  * 用法：
  *   // 无参纯透传
- *   closeBrowser: useCapability('closeBrowser')
+ *   closeBrowser: defineCapability('closeBrowser')
  *
  *   // 带默认 mock
- *   submit: useCapability<SubmitScoreReq>('submitScore')
+ *   submit: defineCapability<SubmitScoreReq>('submitScore')
  *     .mock((req, ctx) => ({ score: 7 }))
  *
  * - `Req` 泛型声明请求类型，handler 内 `req` 自动有类型。缺省 `void`。
@@ -41,7 +41,7 @@ const isPromiseLike = (v: unknown): v is PromiseLike<unknown> =>
  * - `ctx` 永远是 `MockCtx`，handler 内可用 store / mockUserId / delay() / log() 等
  * - 业务侧 `override(key).mock(h)` 会原地替换默认 handler，优先级最高
  */
-export function useCapability<Req = void, Resp = unknown>(
+export function defineCapability<Req = void, Resp = unknown>(
   sdk: string
 ): CapabilityBuilder<Req, Resp> {
   let handler: MockHandler<Req, Resp> | undefined
@@ -66,9 +66,9 @@ export function useCapability<Req = void, Resp = unknown>(
  *
  * 用法：
  *   export const rank = defineNamespace('rank', {
- *     submit: useCapability<SubmitScoreReq>('submitScore').mock(submitScoreDefault),
- *     list:   useCapability<RankListReq>('getRankList').mock(rankListDefault),
- *     me:     useCapability<MyRankReq>('getMyRank').mock(myRankDefault)
+ *     submit: defineCapability<SubmitScoreReq>('submitScore').mock(submitScoreDefault),
+ *     list:   defineCapability<RankListReq>('getRankList').mock(rankListDefault),
+ *     me:     defineCapability<MyRankReq>('getMyRank').mock(myRankDefault)
  *   })
  *
  * `namespaceName` 用于 mock 日志前缀 `[toy:mock] <name>.<method>`。

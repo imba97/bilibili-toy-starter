@@ -2,7 +2,7 @@
 //
 // 容器能力 —— SDK 骨架。空响应兜底由 mock/defaults.ts 提供。
 
-import { defineNamespace, useCapability } from '../namespace'
+import { defineNamespace, defineCapability } from '../namespace'
 import {
   containerStateDefault,
   onContainerChangeDefault,
@@ -11,10 +11,10 @@ import {
 
 export const container = defineNamespace('container', {
   onChange:
-    useCapability<ToySDK.ContainerStateListener>('onContainerChange').mock(
+    defineCapability<ToySDK.ContainerStateListener>('onContainerChange').mock(
       onContainerChangeDefault
     ),
-  state: useCapability('getContainerState').mock(containerStateDefault),
+  state: defineCapability('getContainerState').mock(containerStateDefault),
   setMode:
-    useCapability<ToySDK.SetContainerModeReq>('setContainerMode').mock(setContainerModeDefault)
+    defineCapability<ToySDK.SetContainerModeReq>('setContainerMode').mock(setContainerModeDefault)
 })
