@@ -8,48 +8,23 @@
 // 所以没法精确匹配「我」。近似方案：拿 getMyRank 的 rank 高亮对应名次；
 // 同分名次唯一，rank 本身就是稳定标识。拿不到 myRank 时不高亮（宁缺勿滥）。
 
-import { onMounted, ref } from 'vue'
-import type { ToySDK } from 'bilibili-toy'
-import { rank, user } from '@/mock'
-import { initToy, toErrorMessage } from '@/composables/useToy'
+import { useRankStore } from '@/composables/useRankStore'
 
-const list = ref<ToySDK.RankItem[]>([])
-const myRank = ref<ToySDK.MyRankResp | null>(null)
-const me = ref<ToySDK.UserProfileResp | null>(null)
-const loading = ref(true)
-const refreshing = ref(false)
-const errorMessage = ref('')
-
-async function load() {
-  errorMessage.value = ''
-  try {
-    await initToy()
-    // 一次进页面各拉一次，本地复用（§7-3）
-    const [rankList, mine, profile] = await Promise.all([
-      rank.list(),
-      rank.me(),
-      // 用户信息读取失败不阻塞榜单展示
-      user.profile().catch(() => null)
-    ])
-    list.value = rankList
-    myRank.value = mine
-    me.value = profile
-  } catch (error) {
-    errorMessage.value = toErrorMessage(error)
-  }
-}
+// 共享首屏拉取的榜单状态 —— App 挂载时已 load 一次，本页直接消费。
+// 手动「刷新」按钮仍走 store.load() 重新拉取一次。
+const rankStore = useRankStore()
+const list = rankStore.list
+const myRank = rankStore.myRank
+const me = rankStore.me
+const loading = rankStore.loading
+const refreshing = rankStore.refreshing
+const errorMessage = rankStore.errorMessage
 
 async function refresh() {
-  if (refreshing.value) return
-  refreshing.value = true
-  await load()
-  refreshing.value = false
+  await rankStore.load().catch(() => {
+    // 错误信息已写入 store，模板会渲染错误态
+  })
 }
-
-onMounted(async () => {
-  await load()
-  loading.value = false
-})
 
 const medalClass = (rank: number) =>
   rank === 1

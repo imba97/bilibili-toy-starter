@@ -39,13 +39,18 @@ export function toErrorMessage(err: unknown): string {
   if (err instanceof Error && err.message.includes('[bilibili-toy]')) {
     return err.message.replace('[bilibili-toy] ', '')
   }
-  if (
-    typeof err === 'object' &&
-    err !== null &&
-    'code' in err &&
-    (err as any).code === RATE_LIMIT_CODE
-  ) {
+  if (isRateLimitError(err)) {
     return '请求过于频繁，请稍后再试'
   }
   return err instanceof Error ? err.message : String(err)
+}
+
+/**
+ * 限流错误判断：B 站 / Toy 网关约定错误码 307044 为限流。
+ * 用类型守卫替代 `as any`：先确认是对象、再确认 code 是 number。
+ */
+function isRateLimitError(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null || !('code' in err)) return false
+  const code = (err as { code?: unknown }).code
+  return typeof code === 'number' && code === RATE_LIMIT_CODE
 }

@@ -14,7 +14,7 @@
 // 调用方零分支：
 //   await rank.submit({ score: 7 })  // 真容器走 RPC，dev 模式走 mock
 
-import type { Capability, CapabilityBuilder, MockHandler } from './types'
+import type { Capability, CapabilityBuilder, MockHandler, AwaitedPromise } from './types'
 import { getSdk, isMockEnabled, getMockCtx } from './toy'
 import { isToyHostNotReady, normalizeToyError } from './error'
 
@@ -37,29 +37,57 @@ const isPromiseLike = (v: unknown): v is PromiseLike<unknown> =>
  *     .mock((req, ctx) => ({ score: 7 }))
  *
  * - `Req` 泛型声明请求类型，handler 内 `req` 自动有类型。缺省 `void`。
- * - `Resp` 不写泛型 —— lambda 返回值自动推导（Resp 默认 `any` 是无约束桥）
+ * - `Resp` 由 `.mock(h)` 的 `Awaited<ReturnType<H>>` 推导并回填到 *新* builder。
+ *   也就是说 `.mock(h)` 之后拿到的新 builder 类型上 Resp 已经是推导后的具体类型，
+ *   namespace 方法签名随即变成 `(req: Req) => Promise<Resp>`，消费方拿到的就是精确类型
+ *   （如 `rank.list` 返回 `Promise<RankItem[]>`）。
+ * - 原 builder（`.mock(h)` 调用前的那个）Resp 仍是 `unknown`：此时 namespace 方法签名
+ *   是 `(req: Req) => Promise<unknown>`，调用方需断言。设计意图是「不能跳过 mock 注册」——
+ *   必须先 .mock(h) 才能拿到精确类型。
  * - `ctx` 永远是 `MockCtx`，handler 内可用 store / mockUserId / delay() / log() 等
  * - 业务侧 `override(key).mock(h)` 会原地替换默认 handler，优先级最高
+ *
+ * 实现要点：`.mock(h)` 必须返回一个 *新* 对象，因为 TypeScript 的 CapabilityBuilder
+ * 接口把 Resp 放在泛型里；同一对象上换 Resp 不会改变外部拿到的类型（外部拿到的是原
+ * builder 的类型实例）。
  */
-export function defineCapability<Req = void, Resp = unknown>(
-  sdk: string
-): CapabilityBuilder<Req, Resp> {
-  let handler: MockHandler<Req, Resp> | undefined
-  const builder: CapabilityBuilder<Req, Resp> = {
-    sdk,
-    mock(h: MockHandler<Req, Resp>) {
-      handler = h
-      return builder
-    }
+export function defineCapability<Req = void>(sdk: string): CapabilityBuilder<Req, unknown> {
+  // builder 实例只挂 sdk / mock：handler 闭包变量不被新 builder 共享，
+  // 因此下面 buildCapabilityProxy 拿不到。改用 attached-state 模式：
+  // 让每个 builder 实例自己持有 handler，新 builder 复制旧 handler 引用。
+  const handlerSlot: { current: MockHandler<Req> | undefined } = { current: undefined }
+  const makeBuilder = <R>(): CapabilityBuilder<Req, R> => {
+    const b = {
+      sdk,
+      mock<R>(
+        h: (req: Req, ctx: import('./types').MockCtx) => R
+      ): CapabilityBuilder<Req, Awaited<R>> {
+        handlerSlot.current = h
+        return makeBuilder<Awaited<R>>()
+      }
+    } as CapabilityBuilder<Req, R>
+    // 路由层读 _getMock() 取 handler；enumerable:false 避免泄漏到 JSON 序列化
+    Object.defineProperty(b, '_getMock', {
+      value: (): MockHandler<Req> | undefined => handlerSlot.current,
+      enumerable: false
+    })
+    return b
   }
-  // 把 handler getter 挂在 builder 上 —— 路由层读它来分发
-  // 不放进类型，避免外部代码触碰。
-  Object.defineProperty(builder, '_getMock', {
-    value: (): MockHandler<Req, Resp> | undefined => handler,
-    enumerable: false
-  })
-  return builder
+  return makeBuilder<unknown>()
 }
+
+/**
+ * 从 CapabilityBuilder<Req, Resp> 推出 namespace 方法签名：
+ *   - Req = void      → (req?: void) => AwaitedPromise<Resp>
+ *   - Req = T         → (req: T) => AwaitedPromise<Resp>
+ * 两者都被展开为统一形式 `(req?: Req) => AwaitedPromise<Resp>`：
+ *   - Req = void      → `(req?: void) => ...` → 调用方 `f()` 不传参（void 作可省参数合法）
+ *   - Req = T         → `(req?: T) => ...` → 调用方可选传，与 ToySDK 官方 `req?: T` 对齐
+ * 即使 ToySDK 官方声明 Req 必填，SDK 层统一把参数放宽为可选 —— 调用方想传就传、不传也行，
+ * mock handler 自己处理 `req` 为 undefined 的兜底逻辑（默认 mock 都做了）。
+ */
+type CapabilityMethod<B extends CapabilityBuilder<any, any>> =
+  B extends CapabilityBuilder<infer Req, infer Resp> ? (req?: Req) => AwaitedPromise<Resp> : never
 
 /**
  * 声明一个 namespace。
@@ -78,6 +106,8 @@ export function defineCapability<Req = void, Resp = unknown>(
  *
  * - 类型层 key 严格收窄：override('submit') 拿到 SubmitScoreReq 的 builder，
  *   业务侧 .mock(h) 的 h 入参自动是 SubmitScoreReq，无需手动标注
+ * - 每个方法签名从 `CapabilityBuilder<Req, Resp>` 推导为 `(req: Req) => Promise<Awaited<Resp>>`，
+ *   消费方 `await rank.list()` / `await user.profile()` 直接拿到具体业务类型
  * - 返回对象上每个方法都是 Proxy：handler 真存在才走 mock，否则透传 window.toy
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,7 +118,7 @@ export function defineNamespace<
   namespaceName: Name,
   bindings: B
 ): {
-  readonly [K in keyof B]: (...args: unknown[]) => unknown
+  readonly [K in keyof B]: CapabilityMethod<B[K]>
 } & {
   /**
    * 拿到某个能力对应的 builder，链式 `.mock(h)` 原地替换默认 handler。
@@ -109,7 +139,7 @@ export function defineNamespace<
   // override 是 namespace 元方法，绕过 capability 路由、跳过诊断日志。
   def.override = <K extends keyof B>(key: K): B[K] => bindings[key]
   return def as {
-    readonly [K in keyof B]: (...args: unknown[]) => unknown
+    readonly [K in keyof B]: CapabilityMethod<B[K]>
   } & { override: <K extends keyof B>(key: K) => B[K] }
 }
 

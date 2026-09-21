@@ -12,6 +12,17 @@
 import { RouterLink } from 'vue-router'
 import AppFooter from './components/AppFooter.vue'
 import AppHeader from './components/AppHeader.vue'
+import { useRankStore } from './composables/useRankStore'
+
+// 首屏在 App 层拉一次排行榜 —— 后续签到 / 路由切换都共享同一份数据，
+// 避免每次进 rank.vue 重拉导致的服务端存储延迟看到旧数据。
+// 错误信息走 errorMessage 顶栏，任何页面（包括首屏 index.vue）都能看见。
+const rankStore = useRankStore()
+rankStore.load().catch(() => {
+  /* 错误已写入 rankStore.errorMessage，顶部条会渲染 */
+})
+// 模板消费的别名，避免冗长 chain
+const errorMessage = rankStore.errorMessage
 
 const navItems = [
   { to: '/', label: '签到', icon: 'i-carbon:checkbox-checked-filled' },
@@ -52,6 +63,14 @@ const navItems = [
         </button>
       </RouterLink>
     </nav>
+
+    <p
+      v-if="errorMessage"
+      class="mx-6 mb-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-xs text-red-600 text-center"
+      role="alert"
+    >
+      {{ errorMessage }}
+    </p>
 
     <main class="flex-1 flex flex-col items-center p-6">
       <RouterView />

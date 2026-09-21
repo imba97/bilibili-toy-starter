@@ -9,6 +9,7 @@ import { onMounted, ref } from 'vue'
 import { isDeniedError, isToyError } from 'bilibili-toy'
 import { rank, cloud, user } from '@/mock'
 import { initToy, toErrorMessage } from '@/composables/useToy'
+import { useRankStore } from '@/composables/useRankStore'
 import {
   STORAGE_KEYS,
   formatDate,
@@ -19,8 +20,12 @@ import {
 } from '@/composables/checkin'
 
 const state = ref<CheckinState>({ total: 0, lastDate: null })
-const userProfile = ref<ToySDK.UserProfileResp | null>(null)
-const loading = ref(true)
+// 用户资料走全局 store —— App 挂载时已经 fetch 一次，本页直接消费，避免每次
+// 进首页 / 进排行榜都重复触发 user.profile() 弹窗。
+const rankStore = useRankStore()
+const userProfile = rankStore.me
+/** 签到数据（cloud + mine）首屏加载状态；榜单状态走 rankStore.loading */
+const bootLoading = ref(true)
 const submitting = ref(false)
 const authorising = ref(false)
 const message = ref('')
@@ -43,6 +48,7 @@ function notify(text: string, isError = false) {
  */
 async function fetchProfile() {
   try {
+    // user.profile() 在 bilibili-toy 包的 dist 签名是 (req?: void) => Promise<UserProfileResp>，类型已精确。
     const profile = await user.profile()
     userProfile.value = profile
     userDenied.value = false
@@ -69,10 +75,8 @@ onMounted(async () => {
     await initToy()
     const [raw, mine] = await Promise.all([
       cloud.get([STORAGE_KEYS.total, STORAGE_KEYS.lastDate]),
-      // 我的排名读取失败不阻塞签到主流程
-      rank.me().catch(() => null),
-      // 用户信息由 fetchProfile 处理拒绝/失败的状态分流
-      fetchProfile()
+      // 我的排名读取失败不阻塞签到主流程；类型由 SDK 推导为 Promise<MyRankResp>
+      rank.me().catch((): ToySDK.MyRankResp | null => null)
     ])
     state.value = parseCheckinState(raw)
     // 补交：上次 submitScore 失败会导致榜单分数落后，进页面时对齐一次（§7-4 仍是按事件提交）
@@ -84,7 +88,7 @@ onMounted(async () => {
   } catch (error) {
     notify(`读取签到数据失败：${toErrorMessage(error)}`, true)
   } finally {
-    loading.value = false
+    bootLoading.value = false
   }
 })
 
@@ -111,6 +115,9 @@ async function checkin() {
     // 一次批量写（§7-2）
     await cloud.set(result.writes)
     state.value = result.state
+    // 本地榜单 +1：避开服务端 submitScore 同步延迟，立即让 rank.vue 看到新分数。
+    // myRank.score 始终在 bumpMyScore 里同步 +1，保证顶部「我」的横幅也不落后。
+    rankStore.bumpMyScore(1)
     // 排行榜分数 = 累计签到天数，只在签到事件提交一次（§7-4）；失败下次进页面补交
     const scoreBefore = scoreSynced
     await syncScore(result.state.total)
@@ -132,7 +139,7 @@ async function checkin() {
     <div
       class="w-full px-6 py-8 rounded-2xl bg-white shadow-sm border border-pink-200 flex flex-col items-center gap-4"
     >
-      <template v-if="loading">
+      <template v-if="bootLoading">
         <div class="i-svg-spinners:180-ring text-3xl text-pink-400" />
         <p class="text-sm text-gray-400">读取签到数据中…</p>
       </template>
