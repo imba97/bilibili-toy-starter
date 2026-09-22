@@ -1,6 +1,6 @@
 {
   "name": "bilibili-toy",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Typed SDK for the Bilibili Toy platform creator APIs",
   "homepage": "https://github.com/imba97/bilibili-toy-starter#readme",
   "bugs": {
