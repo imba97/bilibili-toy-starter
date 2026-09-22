@@ -13,7 +13,8 @@
 //   rank.vue:   import { rank } from '@/mock'
 //   index.vue:  import { rank, cloud, user } from '@/mock'
 
-// 触发 mock handler 注册（按文件顺序：cloud → rank → user → author → share）
+// 触发 mock handler 注册。每个文件顶层 import 即调 namespace.override(...).mock(handler)，
+// 顺序无关：handler 挂到 builder 的 _mock 槽位上，路由 lookup 时直接命中。
 import './cloud'
 import './rank'
 import './user'

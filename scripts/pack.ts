@@ -18,10 +18,10 @@
 // Output:
 //   .bundles/toy-<version>.zip   (deterministic; overwrites in place)
 
-import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs'
-import { createWriteStream } from 'node:fs'
+import { existsSync, mkdirSync, statSync, createWriteStream } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import pkg from '../package.json' with { type: 'json' }
 import { ZipArchive } from 'archiver'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -29,11 +29,6 @@ const repoRoot = resolve(here, '..')
 const distDir = resolve(repoRoot, 'dist')
 const bundlesDir = resolve(repoRoot, '.bundles')
 
-interface PackageJson {
-  name?: string
-  version?: string
-}
-const pkg = JSON.parse(readFileSync(resolve(repoRoot, 'package.json'), 'utf8')) as PackageJson
 if (!pkg.version || !pkg.name) {
   console.error('package.json is missing "name" or "version" — cannot name the archive.')
   process.exit(1)

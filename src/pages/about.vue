@@ -154,11 +154,12 @@
         bilibili-toy SDK
       </h3>
       <p class="text-sm text-gray-600 leading-relaxed">
-        位于
+        通过
         <code class="px-1 py-0.5 rounded bg-pink-50 text-pink-600 text-xs font-mono"
-          >packages/bilibili-toy/</code
-        >，是官方 Toy JS SDK 的薄封装。零运行时依赖、完整 TypeScript 类型、扁平 API 设计，配合 Proxy
-        转发让新增方法自动可用；统一
+          >pnpm add bilibili-toy</code
+        >
+        安装，是官方 Toy JS SDK 的薄封装。零运行时依赖、完整 TypeScript 类型、扁平 API
+        设计，配合 Proxy 转发让新增方法自动可用；统一
         <code class="px-1 py-0.5 rounded bg-pink-50 text-pink-600 text-xs font-mono"
           >[bilibili-toy]</code
         >

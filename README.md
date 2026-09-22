@@ -2,7 +2,7 @@
 
 # 🚀 bilibili-toy-starter
 
-**Bilibili Toy 平台 Monorepo 脚手架 — Vue 3 Toy 应用 + `bilibili-toy` TypeScript SDK。**
+**Bilibili Toy 平台脚手架 — Vue 3 Toy 应用，搭配 [`bilibili-toy`](https://github.com/imba97/bilibili-toy) TypeScript SDK。**
 
 [![GitHub](https://img.shields.io/badge/GitHub-imba97%2Fbilibili--toy--starter-181717?logo=github&logoColor=white)](https://github.com/imba97/bilibili-toy-starter)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
@@ -19,12 +19,10 @@
 
 ## 特性
 
-- 🧩 **Monorepo 双产物** — Toy 应用（`src/`）+ SDK 库（`packages/bilibili-toy/`），`pnpm` 工作区共享依赖
 - 🎨 **Vue 3 + UnoCSS** — Composition API、`<script setup>`、原子化 CSS，丝滑开发体验
-- 🛠️ **一体化工具链** — `vite-plus`（`vp`）一站式 fmt / lint / check / test / staged / pack，无需 `eslint.config.js` / `prettier.config.js`
-- 📦 **开箱即用 SDK** — 官方 Bilibili Toy JS SDK 的类型安全封装，自带 mock 钩子
-- 🚢 **两阶段 Toy 发布** — `npm run toy:publish` 自动打包 SDK + 构建 + 创建预览 URL，人工 review 后加 `--yes` 提交
-- ⚙️ **完整 CI / CD** — GitHub Actions 自动 release + npm publish，bumpp 一键 bump
+- 🛠️ **一体化工具链** — `vite-plus`（`vp`）一站式 fmt / lint / check / test / staged / build，无需 `eslint.config.js` / `prettier.config.js`
+- 📦 **`bilibili-toy` SDK** — 通过 `pnpm add bilibili-toy` 直接安装官方 npm 版本，自带 mock 钩子
+- 🚢 **两阶段 Toy 发布** — `npm run toy:publish` 自动构建 + 创建预览 URL，人工 review 后加 `--yes` 提交
 
 ---
 
@@ -53,8 +51,8 @@
 
 ```
 .
-├── packages/bilibili-toy/   # npm 库 — TypeScript SDK 封装，发布到 npm
 ├── src/                     # Vue 3 SPA — Toy 应用本体（页面 / 组件 / composables）
+├── src/types/toy-sdk.d.ts   # ToySDK 环境类型的 shim（指向 bilibili-toy 包）
 ├── scripts/                 # 脚本（pack / publish-toy）
 ├── public/                  # 静态资源（favicon / cover / icon）
 ├── preview/                 # 构建产物快照（玩具卡片预览）
@@ -62,10 +60,8 @@
 └── vite.config.ts           # 单文件管理全部工具链配置
 ```
 
-本仓库承载两类产物：
-
-1. **Toy 应用**（`src/`）— 由 `vp build` 构建，通过 `toy create` / `toy update` 上传。
-2. **SDK 库**（`packages/bilibili-toy/`）— 由 `vp pack` 构建，以 `bilibili-toy` 名称发布到 npm。
+SDK 库（`bilibili-toy`）已拆出为独立仓库 [`imba97/bilibili-toy`](https://github.com/imba97/bilibili-toy)，
+通过 `pnpm add bilibili-toy` 安装，本仓库不再托管 SDK 源码。
 
 ---
 
@@ -79,7 +75,7 @@ pnpm install
 npm run dev               # → http://localhost:5173
 
 # 发布 Toy（两阶段：预览 → 人工确认 → 提交）
-npm run toy:publish       # 打包 SDK + 构建 + toy create（不带 --yes）→ 返回 preview_url
+npm run toy:publish       # vp build + toy create（不带 --yes）→ 返回 preview_url
 ```
 
 > 打开预览链接，确认无误后重新执行并附带 `--yes` 提交。更新已有 Toy 使用 `npm run toy:update -- <toy-id>`。
@@ -137,7 +133,7 @@ rank.override('list').mock(async (req, ctx) => {
 - 🔁 **宿主就绪重试** — 对 `toy id not available on host` 竞态透明退避
 - 🛡️ **错误归一化** — 统一 `[bilibili-toy]` 前缀；提供 `isToyHostNotReady` / `isToyError` 用于类型化处理
 
-完整 API 见 [`packages/bilibili-toy/README.md`](./packages/bilibili-toy/README.md)。
+完整 API 见 [`bilibili-toy` 仓库 README](https://github.com/imba97/bilibili-toy#readme)。
 
 ---
 
@@ -149,29 +145,18 @@ rank.override('list').mock(async (req, ctx) => {
 
 ```bash
 # 首次创建
-npm run toy:publish         # 打包 SDK + 构建 + toy create ./dist --json   （不带 --yes）
+npm run toy:publish         # vp build + toy create ./dist --json   （不带 --yes）
 # → 检查返回的 preview_url …
 
 # 更新已有 Toy
-npm run toy:update -- <id>  # 打包 SDK + 构建 + toy update <id> ./dist --json （不带 --yes）
+npm run toy:update -- <id>  # vp build + toy update <id> ./dist --json （不带 --yes）
 # → 检查返回的 preview_url …
 
 # 确认无误后重新执行并追加 --yes 提交
 ```
 
-> `npm run toy:publish` / `toy:update` 脚本在构建前 **总是会重新打包 SDK** — Toy 构建产物会打包 `packages/bilibili-toy/dist/index.mjs`，如果只改了 SDK 源码而没有重新打包，部署的还是旧版本。
-
----
-
-## 发布 npm 库
-
-```bash
-npm run release:dry         # 预览下一个版本号（不写盘）
-npm run release             # bumpp：升级版本号 + 提交 + 打 tag + 推送
-cd packages/bilibili-toy && pnpm publish --access public
-```
-
-> CI 会自动 publish 到 npm（详见 `.github/workflows/`）。
+> Toy 构建产物会打包 `node_modules/bilibili-toy/dist/index.mjs`，所以
+> `bilibili-toy` 升级后只要 `pnpm install` 拉取新版本即可，无需手动构建 SDK。
 
 ---
 
@@ -181,15 +166,14 @@ cd packages/bilibili-toy && pnpm publish --access public
 | --------------------------------- | ------------------------------------------ |
 | `npm run dev`                     | Toy 开发服务器                             |
 | `npm run build`                   | Toy 生产构建                               |
-| `npm run pack`                    | 库构建（`tsdown` via `vp pack`）           |
-| `npm run sdk:pack`                | 仅构建 SDK                                 |
-| `npm run test`                    | 全包 Vitest                                |
+| `npm run test`                    | Vitest                                     |
 | `npm run check`                   | 格式化 + Lint + 类型检查                   |
 | `npm run fmt` / `lint` / `staged` | 单项检查                                   |
-| `npm run toy:publish`             | 打包 SDK + 构建 + `toy create --json`      |
-| `npm run toy:update -- <id>`      | 打包 SDK + 构建 + `toy update <id> --json` |
+| `npm run toy:publish`             | 构建 + `toy create --json`                 |
+| `npm run toy:update -- <id>`      | 构建 + `toy update <id> --json`            |
 | `npm run toy:mylist`              | 列出当前账号下的 Toy                       |
-| `npm run release` / `release:dry` | 升级版本号 + 提交 + 打 tag + 推送          |
+
+> SDK 自身的版本发布与 CI 详见独立的 [`imba97/bilibili-toy`](https://github.com/imba97/bilibili-toy) 仓库。
 
 ---
 
@@ -199,8 +183,9 @@ cd packages/bilibili-toy && pnpm publish --access public
 | ----------------- | ------------------------------------------------------------- |
 | **Toy 内容**      | `src/pages/` 和 `src/components/`                             |
 | **业务逻辑**      | `src/composables/`                                            |
-| **SDK 库**        | `packages/bilibili-toy/src/`                                  |
 | **应用专属 mock** | `src/mock/<namespace>.ts`（调用 `xxx.override(key).mock(h)`） |
+| **平台 SDK 类型** | `bilibili-toy/src/types/toy-sdk.d.ts`（通过 npm 包的 exports 暴露） |
+| **SDK 库本身**    | 改 [`bilibili-toy` 仓库](https://github.com/imba97/bilibili-toy)，本仓库仅消费 npm 版本 |
 
 > **不要做的事**
 >

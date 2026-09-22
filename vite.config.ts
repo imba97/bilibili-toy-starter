@@ -18,8 +18,9 @@ import vue from '@vitejs/plugin-vue'
 // Vue Router 5 built-in file-based routing (src/pages/ → routes).
 // MUST be placed before vue() so <route> blocks in SFCs are picked up.
 import VueRouter from 'vue-router/vite'
-// UnoCSS 0.65.x's `vite` plugin is typed against older Vite versions; runtime
-// is fine on Vite 8. The cast keeps `vp check`'s type pass without forking types.
+// UnoCSS 66.10.x 的 `vite` plugin 类型签名锚定旧版 Vite。运行时在 Vite 8
+// (vite-plus core) 上 OK —— 仅是 .d.ts 比实际 plugin 形状窄，强制 cast
+// 是过渡方案。等 UnoCSS 适配新 Vite 类型后可去掉。
 import UnoCSS from 'unocss/vite'
 
 export default defineConfig({

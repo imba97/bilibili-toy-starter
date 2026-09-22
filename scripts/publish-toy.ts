@@ -31,7 +31,6 @@ const toyDist = resolve(repoRoot, 'dist')
 function run(cmd: string, args: string[], opts: { cwd?: string } = {}): void {
   const result = spawnSync(cmd, args, {
     stdio: 'inherit',
-    shell: process.platform === 'win32',
     cwd: opts.cwd ?? repoRoot,
     env: process.env
   })
@@ -47,17 +46,12 @@ if (!action || (action !== 'create' && action !== 'update')) {
   process.exit(2)
 }
 
-// --- Stage 0: build SDK dependency ---
-// 重要：toy 项目通过 `bilibili-toy: workspace:*` 引入 SDK，
-// 但 toy 平台拿到的是最终 dist，不是 source。
-// 所以发布前必须先把 SDK 重新 pack 进 `packages/bilibili-toy/dist/`，
-// 否则线上 Toy 跑的还是旧 dist —— 这正是之前"排行榜消失"事故的根因。
-// 通过 package.json 里 `sdk:pack` script 走，确保命令行只在一处维护。
-console.log('\n▸ [0/3] npm run sdk:pack\n')
-run('npm', ['run', 'sdk:pack'])
-
 // --- Stage 1: build ---
-console.log('\n▸ [1/3] vp build\n')
+// SDK 现在已经从 monorepo 中拆分出去成为独立仓库 `bilibili-toy`，
+// 通过 `pnpm add bilibili-toy` 安装，使用方拿到的是 npm 上发布的
+// 稳定版本，本地不需要再 `sdk:pack`。Toy 平台打包进 dist 的是
+// `node_modules/bilibili-toy/dist/index.mjs`。
+console.log('\n▸ [1/2] vp build\n')
 run('vp', ['build'])
 
 if (!existsSync(toyDist)) {
@@ -83,35 +77,36 @@ if (isUpdate) {
   toyArgs = ['create', toyDist, '--json', ...passthroughArgs]
 }
 
-console.log(`\n▸ [2/3] toy ${toyArgs.join(' ')}\n`)
+console.log(`\n▸ [2/2] toy ${toyArgs.join(' ')}\n`)
 console.log('   (Running WITHOUT --yes — this will only generate a preview_url.)\n')
 
-// Capture JSON output so we can surface preview_url clearly.
+// Capture JSON output so we can surface preview_url clearly. toy CLI 的 --json
+// flag 承诺只吐 JSON；如果解析失败说明 CLI 输出契约被破坏，应该让 CI 立即
+// 看到 error 而不是 silent fallback。
 const toyResult = spawnSync('toy', toyArgs, {
   stdio: ['inherit', 'pipe', 'inherit'],
-  shell: process.platform === 'win32',
   cwd: repoRoot,
   env: process.env
 })
 
-process.stdout.write(toyResult.stdout ?? '')
-
 if (toyResult.status !== 0) process.exit(toyResult.status ?? 1)
+
+const raw = (toyResult.stdout ?? '').toString().trim()
+process.stdout.write(raw + '\n')
 
 let previewUrl: string | undefined
 try {
-  const raw = (toyResult.stdout ?? '').toString().trim()
-  if (raw.startsWith('{') || raw.startsWith('[')) {
-    const json = JSON.parse(raw) as { preview_url?: string; data?: { preview_url?: string } }
-    previewUrl = json.preview_url ?? json.data?.preview_url
-  }
-} catch {
-  // Non-JSON output is fine; user will see it above.
+  const json = JSON.parse(raw) as { preview_url?: string; data?: { preview_url?: string } }
+  previewUrl = json.preview_url ?? json.data?.preview_url
+} catch (err) {
+  console.error('\n✗ Failed to parse toy CLI JSON output:', (err as Error).message)
+  console.error('  The --json contract was broken; treat this as a CLI bug.')
+  process.exit(1)
 }
 
-console.log('\n▸ [3/3] Preview ready\n')
+console.log('\n▸ Preview ready\n')
 if (previewUrl) console.log(`   Preview URL: ${previewUrl}\n`)
-else console.log('   Preview URL: (parse the JSON above)\n')
+else console.log('   Preview URL: (toy response had no preview_url)\n')
 
 console.log('   Open the preview in your browser, then decide:')
 console.log('     • Submit for review  → re-run the same command with `--yes`')

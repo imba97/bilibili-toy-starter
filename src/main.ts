@@ -13,6 +13,16 @@ import { createApp } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { routes, handleHotUpdate } from 'vue-router/auto-routes'
 import { toy } from 'bilibili-toy'
+// 业务侧 mock handler 顶层静态 import —— 各文件 (mock/rank.ts 等) 顶层执行
+// `rank.override(key).mock(h)`，把 handler 挂到 SDK builder 的 _mock 槽位。
+// 这里必须放在 `if (DEV || isPreviewUrl)` 块之前：
+//   1. ESM 静态 import 必须是顶层语法（TS1232），不能在 if 块内。
+//   2. ESM 顶层 import 是同步求值，副作用在 import 完成时已就位 —— 不会发生
+//      "首次 namespace 调用时 mock chunk 还没加载完"的竞态（动态 import 才会拆 chunk）。
+//   3. 没有 mock 模式时（prod / 非 preview），handler 注册了也不会被执行：
+//      SDK 路由层只在 `mockEnabled && _mock 非空` 时走 mock，否则继续走真实
+//      window.toy 路径。所以无条件 import 是安全的。
+import '@/mock'
 import '@unocss/reset/tailwind.css'
 import 'virtual:uno.css'
 import './styles/main.css'
@@ -26,11 +36,6 @@ import App from './App.vue'
 const isPreviewUrl = typeof location !== 'undefined' && location.pathname.includes('/toy/preview/')
 if (import.meta.env.DEV || isPreviewUrl) {
   toy.enableMock()
-  // 注册业务侧 mock handler —— 必须在 enableMock 之后、第一次 namespace
-  // 调用之前完成。namespace.override(key).mock(h) 会原地替换 builder 的
-  // _mock 槽位，路由层 lookup 时直接看到业务版 handler。
-  // 用 void 标记：动态 import 是副作用，不需要 await；ESLint no-floating-promises 抑制。
-  void import('@/mock')
 }
 
 const router = createRouter({

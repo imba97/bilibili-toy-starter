@@ -1,27 +1,4 @@
 allowBuilds:
   esbuild: true
-
-packages:
-  - 'packages/*'
-
 minimumReleaseAgeExclude:
-  - '@vue/compiler-core'
-  - '@vue/compiler-dom'
-  - '@vue/compiler-sfc'
-  - '@vue/compiler-ssr'
-  - '@vue/reactivity'
-  - '@vue/runtime-core'
-  - '@vue/runtime-dom'
-  - '@vue/server-renderer'
-  - '@vue/shared'
-  - vue
-catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@0.3.2
-  vite-plus: 0.3.2
-overrides:
-  vite@*: 'catalog:'
-peerDependencyRules:
-  allowAny:
-    - vite
-  allowedVersions:
-    vite: '*'
+  - bilibili-toy@0.1.7 || 0.1.9

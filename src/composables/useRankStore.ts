@@ -15,14 +15,24 @@
 //     score 仍然同步 +delta 以反映真实累计天数。
 //   - load() 走服务端真实拉取，供首次加载 + 手动刷新使用；仍保持幂等。
 //
-// 类型：直接使用全局 `ToySDK.*` 命名空间（由 packages/bilibili-toy/src/types/toy-sdk.d.ts
-// 注入），与 src/pages/* / src/mock/* 一致。`bilibili-toy` 包本身没有 export ToySDK。
+// 类型：直接使用全局 `ToySDK.*` 命名空间。声明的权威源在 `bilibili-toy` 包内
+// (`bilibili-toy/types/toy-sdk.d.ts`，通过 package.json#exports 暴露)，本仓库
+// 通过 `src/types/toy-sdk.d.ts` 这个 shim 用 `/// <reference />` 转发过来。
+// 与 src/pages/* / src/mock/* 一致。`bilibili-toy` 包本身没有 export ToySDK。
 
 import { ref } from 'vue'
 import { rank, user } from '@/mock'
 import { initToy, toErrorMessage } from './useToy'
 
-/** 排行榜模块级共享状态 —— 模块首次访问时实例化，App 整个生命周期内复用 */
+/**
+ * 排行榜模块级共享状态 —— 模块首次访问时实例化，App 整个生命周期内复用。
+ *
+ * 测试注意：模块级 ref 在 `import` 时即实例化，意味着
+ *   - 在 vitest 里若两个 test file 都 import 这个模块，它们会共享同一份
+ *     list / myRank / me —— vi.resetModules() 或 beforeEach 显式赋值是
+ *     必要的隔离手段。
+ *   - 单 SPA 实例里这是想要的：App.vue load() 一次，所有页共享。
+ */
 const list = ref<ToySDK.RankItem[]>([])
 const myRank = ref<ToySDK.MyRankResp | null>(null)
 const me = ref<ToySDK.UserProfileResp | null>(null)

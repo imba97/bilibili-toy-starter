@@ -48,6 +48,12 @@ export function toErrorMessage(err: unknown): string {
 /**
  * 限流错误判断：B 站 / Toy 网关约定错误码 307044 为限流。
  * 用类型守卫替代 `as any`：先确认是对象、再确认 code 是 number。
+ *
+ * 设计选择：严格 `code === RATE_LIMIT_CODE`（number），不转换 / 不宽松。
+ *   - SDK 在抛出时已经把 code 强制规整为 number（参见 bilibili-toy/src/error.ts），
+ *     所以不会遇到字符串 "307044" 或浮点 307044.0。
+ *   - 不要"好心"改成 `Number(code) === 307044` 或 `==` —— 一旦 B 站新增邻近码
+ *     （如 3070441）会被误判，回归成本远高于现在多写一行类型守卫。
  */
 function isRateLimitError(err: unknown): boolean {
   if (typeof err !== 'object' || err === null || !('code' in err)) return false
