@@ -1,6 +1,6 @@
 {
   "name": "bilibili-toy-starter",
-  "version": "0.1.7",
+  "version": "1.0.0",
   "private": true,
   "description": "Bilibili Toy starter — Vue 3 + UnoCSS + TypeScript, engineered with vite-plus",
   "homepage": "https://github.com/imba97/bilibili-toy-starter#readme",
