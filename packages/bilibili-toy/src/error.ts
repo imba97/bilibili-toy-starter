@@ -77,8 +77,12 @@ export function isToyError(err: unknown): err is ToyErrorLike {
  *
  * 覆盖三种来源：
  *   - 数据类能力的 `ToyDataStatus === 'denied'` —— 用户在数据确认弹窗拒绝
- *   - `unauthorized` / `unsupported` / `toy_context_unavailable` —— 同样无法拿到资料
+ *   - `unauthorized` / `unsupported` —— 同样无法拿到资料
  *   - 媒体类能力的 `error.name === 'BusinessDenied' | 'NotAllowedError'` —— 摄像头/麦克风被拒
+ *
+ * **不包括** `toy_context_unavailable`：那是 host 元信息未就绪（与
+ * `isToyHostNotReady` 重叠），几百毫秒内自动恢复，不该被业务侧当成"用户拒绝"
+ * 去做降级骨架。需要单独判断可用 `isToyHostNotReady`。
  *
  * 业务侧典型用法：用户拒绝授权信息后，在签到按钮旁渲染一个"重新授权用户信息"按钮，
  * 点击时再次调用 `user.profile()` 由平台弹窗。
@@ -88,7 +92,6 @@ export function isDeniedError(err: unknown): boolean {
   if (err.status === 'denied') return true
   if (err.status === 'unauthorized') return true
   if (err.status === 'unsupported') return true
-  if (err.status === 'toy_context_unavailable') return true
   if (err.name === 'BusinessDenied' || err.name === 'NotAllowedError') return true
   return false
 }

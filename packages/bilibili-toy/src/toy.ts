@@ -36,12 +36,29 @@ function debugLog(label: string, payload?: Record<string, unknown>): void {
 // 真 SDK 状态
 // ────────────────────────────────────────────────────────────────────────
 let cachedSdk: ToySDK.Toy | null = null
-let readyPromise: Promise<ToySDK.Toy> | null = null
+let readyPromise: CancellablePromise<ToySDK.Toy> | null = null
 
-function waitForToy(timeoutMs: number, onTimeout: () => void): Promise<ToySDK.Toy> {
-  return new Promise((resolve, reject) => {
+/**
+ * 内部用：带 `.cancel()` 的 Promise，SPA 路由切换 / 组件卸载时可主动停掉
+ * 还在排队的 `setTimeout` 轮询，避免后续 tick 在已 reject 的 Promise 上 resolve
+ * 触发 unhandled rejection。
+ */
+interface CancellablePromise<T> extends Promise<T> {
+  cancel(): void
+}
+
+/**
+ * 内部轮询 `window.toy` —— 超时抛 `ToyNotAvailableError`，命中即 resolve。
+ *
+ * 用 `setTimeout` 递归而不是 `setInterval`：超时 reject 后已经排队的 tick
+ * 会在下一个事件循环里被 cancelled 标记拦下，不会再触发副作用。
+ */
+function waitForToy(timeoutMs: number, onTimeout: () => void): CancellablePromise<ToySDK.Toy> {
+  let cancelled = false
+  const promise = new Promise<ToySDK.Toy>((resolve, reject) => {
     const start = Date.now()
-    const tick = () => {
+    const tick = (): void => {
+      if (cancelled) return
       const sdk = detectToy()
       if (sdk) {
         cachedSdk = sdk
@@ -58,6 +75,10 @@ function waitForToy(timeoutMs: number, onTimeout: () => void): Promise<ToySDK.To
     }
     tick()
   })
+  ;(promise as CancellablePromise<ToySDK.Toy>).cancel = (): void => {
+    cancelled = true
+  }
+  return promise as CancellablePromise<ToySDK.Toy>
 }
 
 /** 内部用：拿已 ready 的 SDK 单例。未 ready 抛 ToyNotAvailableError。 */
@@ -110,16 +131,32 @@ export const toy = {
   /**
    * 等待 window.toy 出现并缓存。多次调用共用同一个 Promise。
    * 超时抛 ToyNotAvailableError。默认超时 5000ms。
+   *
+   * 返回 Promise 上挂了 `.cancel()`（仅在等待中的 promise 上有意义）；
+   * 调用方可在 SPA 路由切换 / 组件卸载时主动停掉轮询。
    */
-  ready: (timeoutMs = 5000): Promise<ToySDK.Toy> => {
-    if (cachedSdk) return Promise.resolve(cachedSdk)
-    readyPromise ??= waitForToy(timeoutMs, () => {
-      readyPromise = null
-      cachedSdk = null
-    }).catch((err) => {
-      readyPromise = null
-      throw err
-    })
+  ready: (timeoutMs = 5000): CancellablePromise<ToySDK.Toy> => {
+    if (cachedSdk) {
+      const p = Promise.resolve(cachedSdk) as CancellablePromise<ToySDK.Toy>
+      p.cancel = (): void => {}
+      return p
+    }
+    if (!readyPromise) {
+      const p = waitForToy(timeoutMs, () => {
+        // 超时清理：onTimeout 时 readyPromise 还指向自己，先标 null 让下一次 ready 重新探测
+        readyPromise = null
+        cachedSdk = null
+      })
+      p.then(
+        () => {
+          readyPromise = null
+        },
+        () => {
+          readyPromise = null
+        }
+      )
+      readyPromise = p
+    }
     return readyPromise
   },
 

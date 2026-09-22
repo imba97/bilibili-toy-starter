@@ -15,6 +15,7 @@
 //   await rank.submit({ score: 7 })  // 真容器走 RPC，dev 模式走 mock
 
 import type { Capability, CapabilityBuilder, MockHandler, AwaitedPromise } from './types'
+import { isProd } from './env'
 import { getSdk, isMockEnabled, getMockCtx } from './toy'
 import { isToyHostNotReady, normalizeToyError } from './error'
 
@@ -156,9 +157,16 @@ function buildCapabilityProxy(
     get(_target, prop: string | symbol) {
       if (prop === 'self' || prop === Symbol.toPrimitive) return undefined
       if (prop === 'sdkName') return cap.sdk
-      throw new Error(
-        `[bilibili-toy] ${namespaceName}.${methodName} 不是可读属性（按 method 调用）`
-      )
+      // dev-only 友好提示：误把方法当 getter 用（比如 `rank.submit`）不要直接抛错，
+      // 避免 `console.log(rank.submit)` / 调试器展开时炸日志窗口。dev 模式给 warn，
+      // 生产静默返回 undefined（沿用 Proxy 默认行为）。
+      if (!isProd) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[bilibili-toy] ${namespaceName}.${methodName} 不是可读属性（按 method 调用，如 ${namespaceName}.${methodName}()）`
+        )
+      }
+      return undefined
     },
     apply(_target, _thisArg, args: unknown[]) {
       return dispatch(namespaceName, methodName, cap, args)
@@ -198,7 +206,14 @@ function dispatch(
       try {
         return await mockHandler(req as never, ctx)
       } catch (err) {
-        throw normalizeToyError(err)
+        // mock 路径强制归一：mock handler 是业务代码，抛出的 Error
+        // 不一定带 ToySDK 前缀；统一加 [bilibili-toy] 前缀便于业务侧识别
+        // 「这是 SDK 链路里的错误」并定位 namespace.method。
+        const wrapped = normalizeToyError(err)
+        if (wrapped instanceof Error && !wrapped.message.startsWith('[bilibili-toy]')) {
+          wrapped.message = `[bilibili-toy] ${namespaceName}.${methodName} mock handler 抛错: ${wrapped.message}`
+        }
+        throw wrapped
       }
     })()
   }

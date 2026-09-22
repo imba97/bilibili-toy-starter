@@ -56,7 +56,7 @@ export type AwaitedPromise<Resp = unknown> = Promise<Awaited<Resp>>
  * 推导出 `(req?: Req) => Promise<Resp>`），运行时永远不会被读取。
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface CapabilityBuilder<Req = void, Resp = any> {
+export interface CapabilityBuilder<Req = void, Resp = unknown> {
   /** window.toy 上的方法名 */
   readonly sdk: string
   /**

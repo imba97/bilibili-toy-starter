@@ -35,6 +35,13 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
  *   - 默认只对 `ToyDataStatus === 'unavailable'` 触发退避
  *   - 用尽仍命中时，把最后一次的错误抛给调用方
  *   - 不命中时，原错误原样向上抛
+ *
+ * ⚠️ **写操作副作用警告**：
+ * 默认重试对读操作是安全的；对写操作（`cloud.set` / `cloud.remove` /
+ * `rank.submit`）直接套 `withRetry` 可能在 RPC 已经落库但响应超时时被
+ * 重投，造成计数翻倍 / KV 错乱。需要重试请：
+ *   - 自定义 `shouldRetry` 严格控制重试条件
+ *   - 或在调用方做幂等性保护（如 KV 用 `setIfAbsent` 语义）
  */
 export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
   const { maxAttempts = 3, baseDelayMs = 1000, shouldRetry = isRetryableError } = options

@@ -1,27 +1,22 @@
 // filepath: packages/bilibili-toy/src/mock/store.ts
 //
-// mock 共享状态：cloud KV、签到天数、rank 分数。
+// mock 共享状态：cloud KV。
 //
 // 设计：每个 toy 实例一个 store，dev 模式下整个 SPA 共用同一份（模块单例）。
 // 业务侧可通过 toy.resetMock() 清空。
 //
-// 持久化：cloud KV 与 rank 分数会写入 localStorage，刷新页面或关闭浏览器后再打开
+// 持久化：cloud KV 会写入 localStorage，刷新页面或关闭浏览器后再打开
 // 仍能恢复（与 toy-cli 的"模拟云存储"语义一致；正式 SDK 的云存储是 RPC，不存在持久化问题）。
+//
+// 历史说明：早期版本有过 `RankState`（score/rank 双字段），实际 mock 里
+// rank 永远写 0 —— 真实名次由 `rank.me()` mock 在内部算，不该预填在 store
+// 里。该字段已被删除，store 仅承载 cloud KV + 当前 mockUserId。
 
 /** 模拟云存储的 KV（实际 ToySDK 是异步 RPC，此处用 Map 同步 + 返回时模拟 Promise） */
 export type CloudKV = Map<string, string>
 
-/** rank 维度状态 —— 由 cloud KV 的 ci_total 实时计算，不再独立持久化。 */
-export interface RankState {
-  /** 当前 mock 用户的分数（= ci_total） */
-  score: number
-  /** 当前 mock 用户在榜单中的名次 */
-  rank: number
-}
-
 export interface MockStore {
   cloud: CloudKV
-  rank: RankState
   /** mock 当前访问用户的 mid（默认见 MOCK_DEFAULT_USER_ID） */
   mockUserId: number
 }
@@ -76,13 +71,6 @@ function loadCloudKV(): CloudKV {
   return map
 }
 
-/** 从 cloud KV 实时算出 rank 状态 —— 单一数据源保证签到页 / 排行榜显示一致。 */
-function deriveRank(cloud: CloudKV): RankState {
-  const raw = cloud.get('ci_total')
-  const score = raw !== undefined && /^\d+$/.test(raw) ? Number(raw) : 0
-  return { score, rank: 0 }
-}
-
 /** 把当前 cloud Map 整体回写 localStorage（cloud mock set/remove 时调用） */
 export function persistCloud(cloud: CloudKV): void {
   writeLS(LS_CLOUD, JSON.stringify(Object.fromEntries(cloud)))
@@ -95,10 +83,8 @@ export function clearPersistedMock(): void {
 
 /** 创建默认 mock store。签到累计从 0 开始，让首次进入看到真实"零基础"页面。 */
 export function createMockStore(): MockStore {
-  const cloud = loadCloudKV()
   return {
-    cloud,
-    rank: deriveRank(cloud),
+    cloud: loadCloudKV(),
     mockUserId: MOCK_DEFAULT_USER_ID
   }
 }
