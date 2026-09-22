@@ -1,11 +1,11 @@
-// filepath: packages/bilibili-toy/src/mock/dispatch.test.ts
+// filepath: packages/bilibili-toy/tests/mock/dispatch.test.ts
 //
 // mock 路由集成测试 —— 覆盖 enableMock → override → dispatch → handler → 错误归一
 // 整条链路；同时验证 disableMock 后回到透传（用 stub 替代 window.toy）。
 
 import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test'
-import { toy, isMockEnabled } from '../toy'
-import { defineNamespace, defineCapability } from '../namespace'
+import { toy, isMockEnabled, __resetForTests } from '../../src/toy'
+import { defineNamespace, defineCapability } from '../../src/namespace'
 
 const FAST_LATENCY = { latencyMs: 1 }
 
@@ -25,13 +25,13 @@ function withToyStub<T>(sdk: Record<string, unknown>, fn: () => Promise<T>): Pro
 
 describe('mock dispatch integration', () => {
   beforeEach(() => {
-    toy.disableMock()
-    toy.resetMock()
+    __resetForTests()
+    delete (globalThis as { window?: unknown }).window
   })
 
   afterEach(() => {
-    toy.disableMock()
-    toy.resetMock()
+    __resetForTests()
+    delete (globalThis as { window?: unknown }).window
   })
 
   it('enableMock 后路由打到默认 mock handler —— 返回内置占位', async () => {
@@ -92,6 +92,22 @@ describe('mock dispatch integration', () => {
     )
   })
 
+  it('mock handler 抛 [ToySDK] 错误时也被归一化为 [bilibili-toy] 前缀', async () => {
+    toy.enableMock(FAST_LATENCY)
+
+    const ns = defineNamespace('wrapped', {
+      fail: defineCapability('fail').mock(() => {
+        throw new Error('[ToySDK] unauthorized')
+      })
+    })
+
+    // normalizeToyError turns `[ToySDK] unauthorized` into
+    // `[bilibili-toy] [ToySDK] unauthorized`. Since that already starts with
+    // `[bilibili-toy]`, the dispatch layer's "mock handler 抛错" wrap prefix
+    // is NOT added — the wrapped message is the bare re-prefixed string.
+    await expect(ns.fail()).rejects.toThrow(/^\[bilibili-toy\] \[ToySDK\] unauthorized$/)
+  })
+
   it('disableMock 后回到透传 —— 调用 window.toy[capability.sdk]', async () => {
     toy.enableMock(FAST_LATENCY)
     toy.disableMock()
@@ -109,6 +125,23 @@ describe('mock dispatch integration', () => {
 
       const result = await echo.hello({ name: 'toy' })
       expect(result).toEqual({ greeting: 'real, toy' })
+    })
+  })
+
+  it('passthrough 模式下 window.toy[sdk] 缺失时报清晰错误', async () => {
+    toy.disableMock()
+    await withToyStub({}, async () => {
+      const ns = defineNamespace('err', {
+        ghost: defineCapability('ghost').mock(() => 'ok')
+      })
+      // dispatch throws synchronously when window.toy[sdk] is missing —
+      // catch the sync throw explicitly instead of using rejects matcher.
+      try {
+        await ns.ghost()
+        throw new Error('expected ns.ghost() to throw')
+      } catch (e) {
+        expect((e as Error).message).toMatch(/window\.toy\.ghost 不存在/)
+      }
     })
   })
 

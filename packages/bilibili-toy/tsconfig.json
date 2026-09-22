@@ -5,7 +5,6 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "moduleDetection": "force",
-    "rootDir": "src",
     "resolveJsonModule": true,
     "types": ["vite/client", "node"],
     "strict": true,
@@ -23,5 +22,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "tests/**/*.ts"]
 }

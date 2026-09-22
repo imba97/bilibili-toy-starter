@@ -73,8 +73,10 @@ export default defineConfig({
   },
 
   // --- Test (Vitest) ---
+  // Tests live under `tests/` mirroring `src/` so source and tests stay
+  // cleanly separated (no `.test.ts` files mixed into published sources).
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['tests/**/*.test.ts'],
     environment: 'node'
   },
 

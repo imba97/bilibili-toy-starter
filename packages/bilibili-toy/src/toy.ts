@@ -200,3 +200,20 @@ export const toy = {
   /** 当前是否启用了 mock（同步，便于业务侧做条件渲染） */
   mockEnabled: (): boolean => mockEnabled
 }
+
+/**
+ * 测试专用：清空模块单例状态（cachedSdk + readyPromise + mock store/ctx）。
+ *
+ * 生产代码不应该调用；它的存在纯粹是因为 `cachedSdk` / `readyPromise` 是
+ * 模块级变量，单测间无法直接重置，只能通过这个口子统一清理。
+ *
+ * 不属于 `toy` 公开 API —— 业务侧 import 它会拿到一个明确命名 `__resetForTests`，
+ * 不会和真正的 `toy.ready()` / `toy.disableMock()` 等业务方法混淆。
+ */
+export function __resetForTests(): void {
+  cachedSdk = null
+  readyPromise = null
+  mockEnabled = false
+  mockStore = createMockStore()
+  mockCtx = createMockCtx({ store: mockStore })
+}

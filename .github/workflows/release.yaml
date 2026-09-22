@@ -35,6 +35,10 @@ jobs:
       - name: Install Dependencies
         run: pnpm i --no-frozen-lockfile
 
+      - name: Test library
+        working-directory: packages/bilibili-toy
+        run: pnpm test
+
       - name: Build library
         working-directory: packages/bilibili-toy
         run: pnpm run pack
