@@ -1,4 +1,4 @@
 allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:
-  - bilibili-toy@0.1.7 || 0.1.9
+  - bilibili-toy@0.1.7 || 0.1.9 || 0.1.12
