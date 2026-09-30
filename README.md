@@ -52,7 +52,7 @@
 ```
 .
 ├── src/                     # Vue 3 SPA — Toy 应用本体（页面 / 组件 / composables）
-├── src/types/toy-sdk.d.ts   # ToySDK 环境类型的 shim（指向 bilibili-toy 包）
+├── tsconfig.json            # TS 配置（types 里引入 bilibili-toy 的 ToySDK 全局类型）
 ├── scripts/                 # 脚本（pack / publish-toy）
 ├── public/                  # 静态资源（favicon / cover / icon）
 ├── preview/                 # 构建产物快照（玩具卡片预览）

@@ -19,7 +19,7 @@
 //
 // 类型：直接使用全局 `ToySDK.*` 命名空间。声明的权威源在 `bilibili-toy` 包内
 // (`bilibili-toy/types/toy-sdk.d.ts`，通过 package.json#exports 暴露)，本仓库
-// 通过 `src/types/toy-sdk.d.ts` 这个 shim 用 `/// <reference />` 转发过来。
+// 在 tsconfig.json 的 `compilerOptions.types` 里挂上该子路径即可全局可用，升级 SDK 自动生效。
 // 与 src/pages/* / src/mock/* 一致。`bilibili-toy` 包本身没有 export ToySDK。
 
 import { computed, ref } from 'vue'

@@ -74,14 +74,13 @@ human decision echoed back to the CLI manually (see Hard rules above).
 
 - Edit `src/App.vue` (and `src/pages/` / `src/components/`) to change the toy
   itself.
-- Edit `src/types/toy-sdk.d.ts` only when the shim itself needs adjusting.
-  The authoritative ambient declarations for `ToySDK.*` live in the
-  [`bilibili-toy`](https://github.com/imba97/bilibili-toy) package
-  (`bilibili-toy/src/types/toy-sdk.d.ts`, exposed via
-  `package.json#exports["./types/toy-sdk.d.ts"]`); the local file is just a
-  `/// <reference path="..." />` shim that forwards to it. When B 站 updates
-  the official Toy SDK types, edit `bilibili-toy`, cut a release, then
-  `pnpm update bilibili-toy` here.
+- ToySDK globals (`ToySDK.*` / `window.toy`) come from the `bilibili-toy`
+  package, wired in by `tsconfig.json#compilerOptions.types`
+  (`"bilibili-toy/types/toy-sdk.d.ts"`, exposed via
+  `package.json#exports["./types/toy-sdk.d.ts"]`). Don't add a `src/types/`
+  shim and don't use `/// <reference />`. When B 站 updates the official
+  types, edit `bilibili-toy`, cut a release, then `pnpm update bilibili-toy`
+  here.
 - Edit `src/composables/`, `src/mock/` for app-specific logic and mock hooks.
 - Do **not** edit anything under `dist/` — it's a build artifact.
 - Do **not** add `eslint`, `prettier`, or `tsdown.config.ts`. `vite-plus`
