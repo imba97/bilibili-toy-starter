@@ -34,11 +34,18 @@ const navItems = [
       <h1 class="text-2xl font-bold text-pink-600">Hello, Toy!</h1>
     </header>
 
+    <!--
+      tab 切换用 replace 而不是 push：这三个页是本 Toy 的顶层入口，来回点几次
+      只应该占用**一条**浏览器历史记录 —— 否则用户按返回要挨个倒着经过刚才每次点击，
+      甚至出不去。replace 让当前路由条目被覆盖，返回键一步退出 Toy。
+      （首屏那次导航 vue-router 本身也是 replace，见 finalizeNavigation 的 isFirstNavigation）
+    -->
     <nav class="flex justify-center gap-2 py-3">
       <RouterLink
         v-for="item in navItems"
         :key="item.to"
         :to="item.to"
+        replace
         custom
         v-slot="{ navigate, isActive }"
       >
