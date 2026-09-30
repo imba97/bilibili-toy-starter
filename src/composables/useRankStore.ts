@@ -15,7 +15,8 @@
 //     score 仍然同步 +delta 以反映真实累计天数。
 //   - load() 走服务端真实拉取，供首次加载 + 手动刷新使用；仍保持幂等。
 //   - 「不上榜」是云存储里的一条用户偏好（RANK_HIDE_KEY），load() 时读、点击时写；
-//     渲染层用 visibleList 把「我」剔掉，原始 list 仍是服务端真值。详见 hiddenFromRank。
+//     渲染层用 visibleList 把「我」剔掉并把名次重新编号（不留空洞），
+//     原始 list 仍是服务端真值。详见 hiddenFromRank / visibleList。
 //
 // 类型：直接使用全局 `ToySDK.*` 命名空间。声明的权威源在 `bilibili-toy` 包内
 // (`bilibili-toy/types/toy-sdk.d.ts`，通过 package.json#exports 暴露)，本仓库
@@ -79,14 +80,26 @@ function isMeEntry(entry: ToySDK.RankItem): boolean {
 }
 
 /**
- * 对外展示用的榜单：选了「不上榜」就把「我」那行剔除。
+ * 对外展示用的榜单：选了「不上榜」就把「我」那行剔除，**并重新编号**。
  *
- * 原始 list 保持服务端真值不变 —— bumpMyScore / myRank 等仍按完整数据计算，
- * 「剔除自己」只发生在渲染层，不污染任何需要真实排名的逻辑。
+ * 重新编号是刻意的：剔除后如果保留服务端名次，榜单会出现名次空洞
+ * （1 2 3 4 6 …），看起来像渲染 bug。既然我这一行不展示，对看榜的人来说
+ * 「原来的第 6 名」就是第 5 名 —— 名次跟着可见列表走（原本第 2 名顶上来当第 1）。
+ * 名次只用于渲染（奖牌图标、名次列），没有任何逻辑依赖「展示名次 === 服务端名次」。
+ *
+ * **纯展示层，绝不回写接口**：
+ *   - filter / map 都返回新数组、新对象（`{ ...e, rank }`），list 里的原始条目不被改；
+ *   - 「不上榜」只往云存储写一条偏好，不调用 rank.submit / rank.list 等任何接口，
+ *     服务端榜单（含我的真实名次、别人的名次）保持原样；
+ *   - myRank / myRank.rank 也一律保留服务端值，只被顶部横幅消费。
+ * 原始 list 仍是服务端真值 —— bumpMyScore / isMeEntry 等按完整数据计算。
  */
-const visibleList = computed(() =>
-  hiddenFromRank.value ? list.value.filter((e: ToySDK.RankItem) => !isMeEntry(e)) : list.value
-)
+const visibleList = computed(() => {
+  if (!hiddenFromRank.value) return list.value
+  return list.value
+    .filter((e: ToySDK.RankItem) => !isMeEntry(e))
+    .map((e: ToySDK.RankItem, i: number) => ({ ...e, rank: i + 1 }))
+})
 
 /**
  * 首次加载或重新拉取榜单。list / me / myRank 三路并行；任一失败抛错由调用方决定
