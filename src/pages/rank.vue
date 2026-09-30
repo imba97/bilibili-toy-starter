@@ -7,23 +7,52 @@
 // 「我的排名」高亮：d.ts 声明 RankItem 没有 toyOpenId（榜单不含用户标识），
 // 所以没法精确匹配「我」。近似方案：拿 getMyRank 的 rank 高亮对应名次；
 // 同分名次唯一，rank 本身就是稳定标识。拿不到 myRank 时不高亮（宁缺勿滥）。
+//
+// 「不上榜」：hover 自己那一行 → 「我」tag 让位给 i-ci-hide 图标（tooltip「不上榜」），
+// 点击即写云存储偏好；此后榜单渲染（含刷新后）都不再出现我这一行。
+// 只有本用户视角生效 —— 服务端榜单摘不掉，详见 useRankStore.hiddenFromRank。
 
+import { ref } from 'vue'
 import { useRankStore } from '@/composables/useRankStore'
+import { toErrorMessage } from '@/composables/useToy'
 
 // 共享首屏拉取的榜单状态 —— App 挂载时已 load 一次，本页直接消费。
 // 手动「刷新」按钮仍走 store.load() 重新拉取一次。
+// 列表用 visibleList（已按「不上榜」偏好剔除我自己），原始 list 不在这里消费。
 const rankStore = useRankStore()
-const list = rankStore.list
+const list = rankStore.visibleList
 const myRank = rankStore.myRank
 const me = rankStore.me
+const hiddenFromRank = rankStore.hiddenFromRank
 const loading = rankStore.loading
 const refreshing = rankStore.refreshing
 const errorMessage = rankStore.errorMessage
+
+/** 「不上榜 / 重新上榜」的写入状态与错误提示（本页局部，不进全局 store） */
+const actionPending = ref(false)
+const actionError = ref('')
 
 async function refresh() {
   await rankStore.load().catch(() => {
     // 错误信息已写入 store，模板会渲染错误态
   })
+}
+
+/**
+ * 切换「不上榜」。写成功才改状态（见 setHiddenFromRank 的顺序说明），
+ * 失败把原因落在本页提示条里 —— 不弹 toast，不污染全局 errorMessage。
+ */
+async function setHidden(hidden: boolean) {
+  if (actionPending.value) return
+  actionPending.value = true
+  actionError.value = ''
+  try {
+    await rankStore.setHiddenFromRank(hidden)
+  } catch (err) {
+    actionError.value = `${hidden ? '设置不上榜' : '恢复上榜'}失败：${toErrorMessage(err)}`
+  } finally {
+    actionPending.value = false
+  }
 }
 
 const medalClass = (rank: number) =>
@@ -41,10 +70,7 @@ const medalClass = (rank: number) =>
  * 「我」的真实名次（包括排在 limit 之外的情况）由顶部 myRank 横幅承担。
  */
 const isMe = (entry: ToySDK.RankItem): boolean =>
-  myRank.value !== null &&
-  myRank.value.ranked &&
-  me.value !== null &&
-  entry.nickname === me.value.nickname
+  myRank.value !== null && myRank.value.ranked && rankStore.isMeEntry(entry)
 </script>
 
 <template>
@@ -62,8 +88,27 @@ const isMe = (entry: ToySDK.RankItem): boolean =>
       </button>
     </div>
 
+    <!-- 「不上榜」优先于名次横幅：已经选择不上榜就不该再强调「第 N 名」 -->
     <div
-      v-if="myRank && myRank.ranked"
+      v-if="hiddenFromRank"
+      class="px-4 py-3 rounded-xl bg-white border border-dashed border-pink-200 flex items-center justify-between gap-2 shadow-sm"
+    >
+      <span class="flex items-center gap-2 min-w-0">
+        <span class="i-ci-hide text-lg text-gray-400 shrink-0" />
+        <span class="text-sm text-gray-500 truncate">已设置不上榜，榜单不展示你</span>
+      </span>
+      <button
+        type="button"
+        class="shrink-0 text-sm font-medium text-pink-500 hover:text-pink-600 transition disabled:opacity-50"
+        :disabled="actionPending"
+        @click="setHidden(false)"
+      >
+        重新上榜
+      </button>
+    </div>
+
+    <div
+      v-else-if="myRank && myRank.ranked"
       class="px-4 py-3 rounded-xl bg-pink-500 text-white flex items-center justify-between shadow-sm"
     >
       <span class="flex items-center gap-2 min-w-0">
@@ -100,7 +145,7 @@ const isMe = (entry: ToySDK.RankItem): boolean =>
         <li
           v-for="entry in list"
           :key="entry.rank"
-          class="px-4 py-3 flex items-center gap-3"
+          class="group/row px-4 py-3 flex items-center gap-3"
           :class="isMe(entry) ? 'bg-pink-50' : ''"
         >
           <span class="w-7 text-center">
@@ -118,13 +163,32 @@ const isMe = (entry: ToySDK.RankItem): boolean =>
             class="w-6 h-6 rounded-full"
             referrerpolicy="no-referrer"
           />
-          <span class="flex-1 text-sm text-gray-700 truncate">
-            {{ isMe(entry) && me ? me.nickname : entry.nickname }}
-            <span
-              v-if="isMe(entry)"
-              class="ml-1 px-1.5 py-0.5 text-xs rounded bg-pink-500 text-white font-medium"
-              >我</span
-            >
+          <span class="flex-1 min-w-0 flex items-center gap-1 text-sm text-gray-700">
+            <span class="truncate">{{ isMe(entry) && me ? me.nickname : entry.nickname }}</span>
+            <template v-if="isMe(entry)">
+              <!--
+                常态是粉色「我」tag；hover 整行时让位给「不上榜」图标。
+                触屏（hover: none）没有 hover 态，直接显示图标，否则手机上够不着。
+              -->
+              <span
+                class="shrink-0 px-1.5 py-0.5 text-xs rounded bg-pink-500 text-white font-medium group-hover/row:hidden [@media(hover:none)]:hidden"
+                >我</span
+              >
+              <button
+                type="button"
+                class="group/tip relative shrink-0 hidden group-hover/row:flex [@media(hover:none)]:flex items-center justify-center w-5 h-5 rounded text-gray-400 hover:text-pink-500 transition-colors disabled:opacity-50"
+                aria-label="不上榜"
+                :disabled="actionPending"
+                @click="setHidden(true)"
+              >
+                <span class="i-ci-hide text-base" />
+                <!-- tooltip：放在图标左侧，避免被卡片 overflow-hidden 裁掉 -->
+                <span
+                  class="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 rounded-md bg-gray-800 text-white text-xs whitespace-nowrap opacity-0 group-hover/tip:opacity-100 group-focus-visible/tip:opacity-100 transition-opacity"
+                  >不上榜</span
+                >
+              </button>
+            </template>
           </span>
           <span class="text-sm font-semibold text-pink-600 tabular-nums">{{ entry.score }} 天</span>
         </li>
@@ -132,6 +196,8 @@ const isMe = (entry: ToySDK.RankItem): boolean =>
 
       <p v-else class="py-12 text-center text-sm text-gray-400">还没有人上榜，快回首页签到吧</p>
     </div>
+
+    <p v-if="actionError" class="text-xs text-red-500 text-center">{{ actionError }}</p>
 
     <p class="text-xs text-gray-400 text-center">榜单按累计签到天数排序，签到后自动更新</p>
   </section>

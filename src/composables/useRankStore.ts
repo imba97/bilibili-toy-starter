@@ -14,15 +14,23 @@
 //     行就 +delta；找不到（未上榜 / nick 不匹配）则跳过 list 更新，但 myRank 的
 //     score 仍然同步 +delta 以反映真实累计天数。
 //   - load() 走服务端真实拉取，供首次加载 + 手动刷新使用；仍保持幂等。
+//   - 「不上榜」是云存储里的一条用户偏好（RANK_HIDE_KEY），load() 时读、点击时写；
+//     渲染层用 visibleList 把「我」剔掉，原始 list 仍是服务端真值。详见 hiddenFromRank。
 //
 // 类型：直接使用全局 `ToySDK.*` 命名空间。声明的权威源在 `bilibili-toy` 包内
 // (`bilibili-toy/types/toy-sdk.d.ts`，通过 package.json#exports 暴露)，本仓库
 // 通过 `src/types/toy-sdk.d.ts` 这个 shim 用 `/// <reference />` 转发过来。
 // 与 src/pages/* / src/mock/* 一致。`bilibili-toy` 包本身没有 export ToySDK。
 
-import { ref } from 'vue'
-import { rank, user } from '@/mock'
+import { computed, ref } from 'vue'
+import { cloud, rank, user } from '@/mock'
 import { initToy, toErrorMessage } from './useToy'
+
+/**
+ * 云存储 key：我是否选择「不上榜」。'1' = 不上榜；缺省 / 其他值 = 正常上榜。
+ * 与 checkin 的 `ci_*` 系列同属本 Toy 的业务数据（云存储只存字符串）。
+ */
+export const RANK_HIDE_KEY = 'ci_hide_rank'
 
 /**
  * 排行榜模块级共享状态 —— 模块首次访问时实例化，App 整个生命周期内复用。
@@ -37,6 +45,17 @@ const list = ref<ToySDK.RankItem[]>([])
 const myRank = ref<ToySDK.MyRankResp | null>(null)
 const me = ref<ToySDK.UserProfileResp | null>(null)
 
+/**
+ * 我是否已选择「不上榜」。
+ *
+ * 为什么只能在前端「藏」：d.ts 的 rank 能力只有 submit / list / me，没有
+ * 「摘掉我的榜位」这类接口，且 RankItem 不带 toyOpenId/mid —— 服务端榜单里
+ * 有没有我，不是本 Toy 能决定的。所以「不上榜」= 把这条偏好写进云存储
+ * （跨刷新 / 跨设备持久化），渲染榜单时把「我」那一行剔除。
+ * 影响面：只是本用户视角看不到自己那一行；服务端榜单本身不变。
+ */
+const hiddenFromRank = ref(false)
+
 const loading = ref(true)
 const refreshing = ref(false)
 const errorMessage = ref('')
@@ -48,6 +67,26 @@ const hasLoaded = ref(false)
  * 路由快速切换 / 用户狂点刷新时旧响应污染最新状态。
  */
 let runId = 0
+
+/**
+ * 「我」的榜单行判定 —— 只按 nickname 比对（与 rank.vue 历史实现、bumpMyScore 一致）。
+ * RankItem 不带 toyOpenId/mid，nickname 是当前唯一可用的锚点；极端情况下同昵称
+ * 用户会被误判，属于 SDK 能力边界内的已知近似。
+ */
+function isMeEntry(entry: ToySDK.RankItem): boolean {
+  const nick = me.value?.nickname
+  return !!nick && entry.nickname === nick
+}
+
+/**
+ * 对外展示用的榜单：选了「不上榜」就把「我」那行剔除。
+ *
+ * 原始 list 保持服务端真值不变 —— bumpMyScore / myRank 等仍按完整数据计算，
+ * 「剔除自己」只发生在渲染层，不污染任何需要真实排名的逻辑。
+ */
+const visibleList = computed(() =>
+  hiddenFromRank.value ? list.value.filter((e: ToySDK.RankItem) => !isMeEntry(e)) : list.value
+)
 
 /**
  * 首次加载或重新拉取榜单。list / me / myRank 三路并行；任一失败抛错由调用方决定
@@ -64,15 +103,18 @@ async function load(): Promise<void> {
     await initToy()
     // rank.list / rank.me / user.profile 的 Resp 类型由 bilibili-toy dist 签名保证，
     // 无需任何断言；profile 失败回退到 null 不阻塞榜单展示 —— 与 rank.vue 保持一致
-    const [rankList, mine, profile] = await Promise.all([
+    const [rankList, mine, profile, flags] = await Promise.all([
       rank.list(),
       rank.me(),
-      user.profile().catch((): ToySDK.UserProfileResp | null => null)
+      user.profile().catch((): ToySDK.UserProfileResp | null => null),
+      // 「不上榜」偏好读取失败不阻塞榜单展示（读不到就按正常上榜渲染）
+      cloud.get([RANK_HIDE_KEY]).catch((): Record<string, string> => ({}))
     ])
     if (myRun !== runId) return // 更新的 load() 已经盖过我了，写结果反而会回滚
     list.value = rankList
     myRank.value = mine
     me.value = profile
+    hiddenFromRank.value = flags[RANK_HIDE_KEY] === '1'
     hasLoaded.value = true
   } catch (err) {
     if (myRun !== runId) return
@@ -126,16 +168,44 @@ function bumpMyScore(delta: number): void {
   }
 }
 
+/**
+ * 切换「不上榜」：先写云存储（持久化，刷新 / 换设备都生效），成功后再改本地状态。
+ *
+ * 顺序刻意是「先落盘、后改状态」：写失败时本地状态不动并向上抛错，调用方提示用户 ——
+ * 不会出现「界面显示已隐藏，刷新后又冒出来」的假成功。
+ *
+ * 不动服务端分数：分数仍按签到事件正常 submit（历史榜位无法撤销），
+ * 恢复上榜后立刻按真实分数回到榜单。
+ */
+async function setHiddenFromRank(hidden: boolean): Promise<void> {
+  await initToy()
+  if (hidden) {
+    await cloud.set({ [RANK_HIDE_KEY]: '1' })
+  } else {
+    // 恢复上榜直接删 key，云存储不留无用数据
+    await cloud.remove([RANK_HIDE_KEY])
+  }
+  hiddenFromRank.value = hidden
+}
+
 export function useRankStore() {
   return {
     list,
+    /**
+     * 渲染用榜单（已剔除「不上榜」的我）。页面消费这个而不是 list ——
+     * 需要真实榜单数据（含我自己）的逻辑留在 store 内部。
+     */
+    visibleList,
     myRank,
     me,
+    hiddenFromRank,
     loading,
     refreshing,
     errorMessage,
     hasLoaded,
     load,
-    bumpMyScore
+    bumpMyScore,
+    isMeEntry,
+    setHiddenFromRank
   }
 }
