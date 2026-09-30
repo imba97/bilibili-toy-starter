@@ -23,6 +23,9 @@ export async function initToy(): Promise<void> {
     isToyAvailable.value = true
     return
   }
+  // 已经握手成功过就不再探测：业务里有多个入口（每个页面都有登录门卫）都会 await
+  // 本函数，重复调 toy.ready() 虽然命中 SDK 内部缓存，但没必要多绕一层。
+  if (isToyAvailable.value) return
   try {
     await toy.ready()
     isToyAvailable.value = true
@@ -43,6 +46,55 @@ export function toErrorMessage(err: unknown): string {
     return '请求过于频繁，请稍后再试'
   }
   return err instanceof Error ? err.message : String(err)
+}
+
+/**
+ * 「这次调用是未登录导致的」判定 —— 登录门卫（LoginGate）唯一依赖的判据。
+ *
+ * 为什么不能只用 `isDeniedError`：数据类能力用 `status: 'unauthorized'` 表达未登录，
+ * 但云存储 / 排行榜这类「失败即 reject」的能力，host 是直接抛 Error 的，错误形态是
+ * `[ToySDK] cloud storage request failed: 未登录` —— 既没有 `status` 字段，也没有稳定的
+ * 错误码。`isDeniedError(err)` 只看 `status`，会漏判这类错误，于是页面上就冒出
+ * 「读取签到数据失败：未登录」这种红灯。
+ *
+ * 判定口径（命中任一即认为需要先登录）：
+ *   1. `status === 'unauthorized'` —— SDK 数据类能力的标准形态
+ *   2. `status === 'unsupported'` —— 端外手机浏览器：没有登录入口，SDK 会引导打开 App
+ *      （区别只体现在文案上，见 isUnsupportedAuthError）
+ *   3. `code` 是 401 / -101 —— B 站网关的未登录码（-101 是 account not login）
+ *   4. message 里出现 未登录 / 请先登录 / not login / unauthorized
+ *      文本匹配是兜底：message 由 host 生成，措辞可能变化，但它**只会用来
+ *      决定「展示登录卡片」还是「展示报错」** —— 判错的后果是降级体验，不是数据损坏。
+ */
+export function isAuthError(err: unknown): boolean {
+  if (
+    err instanceof Error &&
+    /未登录|请先登录|not\s*login|unauthorized|账号未登录/i.test(err.message)
+  ) {
+    return true
+  }
+  if (typeof err !== 'object' || err === null) return false
+  const e = err as { status?: unknown; code?: unknown; message?: unknown }
+  if (e.status === 'unauthorized' || e.status === 'unsupported') return true
+  if (typeof e.code === 'number' && (e.code === 401 || e.code === -101)) return true
+  return (
+    typeof e.message === 'string' && /未登录|请先登录|not\s*login|unauthorized/i.test(e.message)
+  )
+}
+
+/**
+ * 「当前环境根本没登录入口」—— 端外手机浏览器：SDK 会先引导打开 B 站 App。
+ * 这时给「点登录」按钮是骗人的，文案要换成「请在 B 站 App 内打开」。
+ *
+ * 注意只认 SDK 的 `status` 字段：靠 message 里出现 "unsupported" 来猜太脆，
+ * 而且真在 App 内运行时不会是这个分支。
+ */
+export function isUnsupportedAuthError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    (err as { status?: unknown }).status === 'unsupported'
+  )
 }
 
 /**

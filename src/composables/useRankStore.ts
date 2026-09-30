@@ -1,10 +1,15 @@
 // filepath: src/composables/useRankStore.ts
 //
-// 排行榜全局共享状态 —— 在 App 挂载时首次加载一次，rank.vue 与 index.vue 共享。
+// 排行榜全局共享状态 —— 由 rank.vue 在登录门卫放行后首次加载，index.vue 复用
+// 同一份（签到后本地 +1，见 bumpMyScore）。
 //
 // 动机：签到后立即跳到排行榜页时，由于服务端存储/同步存在延迟，如果每次进页
-// 都重新拉一次，可能看到旧的天数。改为：首屏在 App 层就拉一次，之后榜单状态
+// 都重新拉一次，可能看到旧的天数。改为：进排行榜页时拉一次，之后榜单状态
 // 在本地维护；签到成功直接本地 +1，排行榜页无需重新拉即反映新分数。
+//
+// 注意：**本 store 不做登录判断**。它读的 rank.me / cloud 都要求已登录，因此
+// 只应在 LoginGate 确认登录后调用 load()（见 src/components/LoginGate.vue）；
+// 未登录时一次都不该被调用，否则就是「未登录」报错的来源。
 //
 // 设计：
 //   - 模块级 ref + load() 是单例，整个 SPA 共享同一份榜单。
@@ -57,6 +62,10 @@ const me = ref<ToySDK.UserProfileResp | null>(null)
  */
 const hiddenFromRank = ref(false)
 
+// 列表的初次加载由 rank.vue 负责（App 不再首屏预拉）：本 store 不再被任何页面
+// 在挂载时自动调用，只有登录门卫放行后才 load()，避免未登录时空发请求。
+// loading 初始为 true —— 进排行榜页时先渲染「加载榜单中…」，load() 完成后落定，
+// 免得首帧闪一下「还没有人上榜」。
 const loading = ref(true)
 const refreshing = ref(false)
 const errorMessage = ref('')

@@ -158,8 +158,8 @@
         <code class="px-1 py-0.5 rounded bg-pink-50 text-pink-600 text-xs font-mono"
           >pnpm add bilibili-toy</code
         >
-        安装，是官方 Toy JS SDK 的薄封装。零运行时依赖、完整 TypeScript 类型、扁平 API
-        设计，配合 Proxy 转发让新增方法自动可用；统一
+        安装，是官方 Toy JS SDK 的薄封装。零运行时依赖、完整 TypeScript 类型、扁平 API 设计，配合
+        Proxy 转发让新增方法自动可用；统一
         <code class="px-1 py-0.5 rounded bg-pink-50 text-pink-600 text-xs font-mono"
           >[bilibili-toy]</code
         >

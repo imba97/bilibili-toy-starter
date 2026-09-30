@@ -162,16 +162,16 @@ npm run toy:update -- <id>  # vp build + toy update <id> ./dist --json （不带
 
 ## 命令速查
 
-| 命令                              | 作用                                       |
-| --------------------------------- | ------------------------------------------ |
-| `npm run dev`                     | Toy 开发服务器                             |
-| `npm run build`                   | Toy 生产构建                               |
-| `npm run test`                    | Vitest                                     |
-| `npm run check`                   | 格式化 + Lint + 类型检查                   |
-| `npm run fmt` / `lint` / `staged` | 单项检查                                   |
-| `npm run toy:publish`             | 构建 + `toy create --json`                 |
-| `npm run toy:update -- <id>`      | 构建 + `toy update <id> --json`            |
-| `npm run toy:mylist`              | 列出当前账号下的 Toy                       |
+| 命令                              | 作用                            |
+| --------------------------------- | ------------------------------- |
+| `npm run dev`                     | Toy 开发服务器                  |
+| `npm run build`                   | Toy 生产构建                    |
+| `npm run test`                    | Vitest                          |
+| `npm run check`                   | 格式化 + Lint + 类型检查        |
+| `npm run fmt` / `lint` / `staged` | 单项检查                        |
+| `npm run toy:publish`             | 构建 + `toy create --json`      |
+| `npm run toy:update -- <id>`      | 构建 + `toy update <id> --json` |
+| `npm run toy:mylist`              | 列出当前账号下的 Toy            |
 
 > SDK 自身的版本发布与 CI 详见独立的 [`imba97/bilibili-toy`](https://github.com/imba97/bilibili-toy) 仓库。
 
@@ -179,12 +179,12 @@ npm run toy:update -- <id>  # vp build + toy update <id> ./dist --json （不带
 
 ## 编辑规范
 
-| 改什么            | 编辑位置                                                      |
-| ----------------- | ------------------------------------------------------------- |
-| **Toy 内容**      | `src/pages/` 和 `src/components/`                             |
-| **业务逻辑**      | `src/composables/`                                            |
-| **应用专属 mock** | `src/mock/<namespace>.ts`（调用 `xxx.override(key).mock(h)`） |
-| **平台 SDK 类型** | `bilibili-toy/src/types/toy-sdk.d.ts`（通过 npm 包的 exports 暴露） |
+| 改什么            | 编辑位置                                                                                |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| **Toy 内容**      | `src/pages/` 和 `src/components/`                                                       |
+| **业务逻辑**      | `src/composables/`                                                                      |
+| **应用专属 mock** | `src/mock/<namespace>.ts`（调用 `xxx.override(key).mock(h)`）                           |
+| **平台 SDK 类型** | `bilibili-toy/src/types/toy-sdk.d.ts`（通过 npm 包的 exports 暴露）                     |
 | **SDK 库本身**    | 改 [`bilibili-toy` 仓库](https://github.com/imba97/bilibili-toy)，本仓库仅消费 npm 版本 |
 
 > **不要做的事**
